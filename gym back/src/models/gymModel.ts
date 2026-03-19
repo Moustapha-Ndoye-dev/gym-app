@@ -14,8 +14,8 @@ export class GymModel {
         name: data.name,
         email: data.email,
         address: data.address || null,
-        phone: data.phone || null
-      }
+        phone: data.phone || null,
+      },
     });
   }
 

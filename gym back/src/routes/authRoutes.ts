@@ -50,35 +50,52 @@ const router = Router();
 
 const loginSchema = z.object({
   body: z.object({
-    username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-    password: z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères")
-  })
+    username: z
+      .string()
+      .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+    password: z
+      .string()
+      .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+  }),
 });
 
 const memberSchema = z.object({
-  body: z.object({
-    username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-    email: z.string().email("Email invalide"),
-    password: z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères"),
-    confirmPassword: z.string().min(5, "La confirmation du mot de passe doit contenir au moins 5 caractères"),
-    gymId: z.number().optional(),
-    // Optional fields for now to match Member model
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    phone: z.string().optional()
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas",
-    path: ["confirmPassword"]
-  })
+  body: z
+    .object({
+      username: z
+        .string()
+        .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+      email: z.string().email('Email invalide'),
+      password: z
+        .string()
+        .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+      confirmPassword: z
+        .string()
+        .min(
+          5,
+          'La confirmation du mot de passe doit contenir au moins 5 caractères'
+        ),
+      gymId: z.number().optional(),
+      // Optional fields for now to match Member model
+      first_name: z.string().optional(),
+      last_name: z.string().optional(),
+      phone: z.string().optional(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: 'Les mots de passe ne correspondent pas',
+      path: ['confirmPassword'],
+    }),
 });
 
 const registerGymSchema = z.object({
   body: z.object({
-    gymName: z.string().min(2, "Le nom de la salle est requis"),
-    gymEmail: z.string().email("Email de la salle invalide"),
+    gymName: z.string().min(2, 'Le nom de la salle est requis'),
+    gymEmail: z.string().email('Email de la salle invalide'),
     adminUsername: z.string().min(3, "Le nom d'utilisateur admin est requis"),
-    adminPassword: z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères")
-  })
+    adminPassword: z
+      .string()
+      .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+  }),
 });
 
 /**
@@ -121,72 +138,110 @@ router.post('/login', validate(loginSchema), login);
  *         description: Données invalides ou email déjà utilisé
  */
 router.post('/register-member', validate(memberSchema), async (req, res) => {
+  console.log('[AUTH-TRACE] Received request on /register-member');
+  console.log('[AUTH-TRACE] Request body:', JSON.stringify(req.body, null, 2));
+
   const { username, password, email, gymId, ...extraData } = req.body;
-  console.log(`[AUTH-DEV] >>> Member registration attempt: "${username}" / "${email}"`);
-  
+  console.log(
+    `[AUTH-DEV] >>> Member registration attempt: "${username}" / "${email}"`
+  );
+  console.log('[AUTH-TRACE] extraData:', JSON.stringify(extraData, null, 2));
+
+
   try {
     // 1. Resolve Gym ID - Robust Fallback
-    console.log(`[AUTH-DEV] Resolving Gym ID (Client requested: ${gymId || 'none'})...`);
+    console.log(
+      `[AUTH-DEV] Resolving Gym ID (Client requested: ${gymId || 'none'})...`
+    );
     let finalGymId = gymId;
     let gymFound = false;
 
     if (finalGymId) {
-      const checkGym = await prisma.gym.findUnique({ where: { id: finalGymId } });
+      const checkGym = await prisma.gym.findUnique({
+        where: { id: finalGymId },
+      });
       if (checkGym) {
         gymFound = true;
-        console.log(`[AUTH-DEV] Requested Gym ID ${finalGymId} validated: "${checkGym.name}"`);
+        console.log(
+          `[AUTH-DEV] Requested Gym ID ${finalGymId} validated: "${checkGym.name}"`
+        );
       } else {
-        console.log(`[AUTH-DEV] Requested Gym ID ${finalGymId} not found. Searching for fallback...`);
+        console.log(
+          `[AUTH-DEV] Requested Gym ID ${finalGymId} not found. Searching for fallback...`
+        );
       }
     }
 
     if (!gymFound) {
       const firstGym = await prisma.gym.findFirst();
       if (!firstGym) {
-        console.error(`[AUTH-DEV] ! CRITICAL FAILURE ! No Gym records exist in Database.`);
-        return res.status(400).json({ 
-          message: "Configuration manquante : Aucune salle de sport trouvée. Contactez le support." 
+        console.error(
+          `[AUTH-DEV] ! CRITICAL FAILURE ! No Gym records exist in Database.`
+        );
+        return res.status(400).json({
+          message:
+            'Configuration manquante : Aucune salle de sport trouvée. Contactez le support.',
         });
       }
       finalGymId = firstGym.id;
-      console.log(`[AUTH-DEV] Fallback successful. Using Gym ID ${finalGymId} ("${firstGym.name}")`);
+      console.log(
+        `[AUTH-DEV] Fallback successful. Using Gym ID ${finalGymId} ("${firstGym.name}")`
+      );
     }
 
-    // 2. Create User account - Assigning 'admin' by default as requested to see all menu items
-    console.log(`[AUTH-DEV] Step 1/2: Creating User identifier="${username}" with role "admin"...`);
-    const user = await UserModel.createUser(username, password, 'admin', finalGymId, email);
-    console.log(`[AUTH-DEV] Step 1/2 Success: User created with ID: ${user.id}`);
-    
+    console.log('[AUTH-TRACE] finalGymId:', finalGymId);
+
+
+    // 2. Create User account - Assigning 'member' role for public registration
+    const user = await UserModel.createUser(
+      username,
+      password,
+      'member',
+      finalGymId,
+      email
+    );
+    console.log('[AUTH-TRACE] UserModel.createUser returned:', JSON.stringify(user, null, 2));
+    console.log(
+      `[AUTH-DEV] Step 1/2 Success: User created with ID: ${user.id}`
+    );
+
     // 3. Create Member profile
-    console.log(`[AUTH-DEV] Step 2/2: Creating Member profile (linking to user ID ${user.id})...`);
-    const memberId = await MemberModel.create({ 
+    const memberArgs = {
       email,
-      first_name: extraData.first_name || username,
-      last_name: extraData.last_name || 'Membre',
-      gymId: finalGymId 
-    });
-    
-    console.log(`[AUTH-DEV] Step 2/2 Success: Member profile created with ID: ${memberId}`);
-    
+      firstName: extraData.first_name || username,
+      lastName: extraData.last_name || 'Membre',
+      phone: extraData.phone,
+      gymId: finalGymId,
+    };
+    console.log('[AUTH-TRACE] Calling MemberModel.create with:', JSON.stringify(memberArgs, null, 2));
+    const memberId = await MemberModel.create(memberArgs);
+    console.log('[AUTH-TRACE] MemberModel.create returned:', memberId);
+    console.log(
+      `[AUTH-DEV] Step 2/2 Success: Member profile created with ID: ${memberId}`
+    );
+
     console.log(`[AUTH-DEV] <<< Registration COMPLETED for "${username}"`);
     res.status(201).json({ id: memberId, message: 'Inscription réussie !' });
   } catch (error: any) {
     console.error('[AUTH-DEV] !!! REGISTRATION FAILED !!! Details:', error);
-    
+    console.error('[AUTH-TRACE] Error object:', JSON.stringify(error, null, 2));
+
     if (error.code === 'P2002') {
       const target = error.meta?.target || '';
       console.log(`[AUTH-DEV] Conflict: Duplicate entry in ${target}`);
       if (typeof target === 'string' && target.includes('username')) {
-        return res.status(400).json({ message: 'Ce nom d\'utilisateur est déjà pris.' });
+        return res
+          .status(400)
+          .json({ message: "Ce nom d'utilisateur est déjà pris." });
       }
       if (typeof target === 'string' && target.includes('email')) {
         return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
       }
     }
 
-    res.status(500).json({ 
-      message: 'Erreur technique durant l\'inscription.',
-      error: error?.message || String(error)
+    res.status(500).json({
+      message: "Erreur technique durant l'inscription.",
+      error: error?.message || String(error),
     });
   }
 });

@@ -8,8 +8,8 @@ const router = Router();
 
 const verifySchema = z.object({
   body: z.object({
-    qr_code: z.string().min(1, "Le code QR est requis")
-  })
+    qr_code: z.string().min(1, 'Le code QR est requis'),
+  }),
 });
 
 router.use(auth);

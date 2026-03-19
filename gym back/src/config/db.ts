@@ -3,7 +3,7 @@ import path from 'path';
 
 // Charge le bon fichier .env même si le backend est lancé depuis un autre dossier.
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-import { PrismaClient } from '../generated/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -19,19 +19,21 @@ export const initializeDb = async () => {
       defaultGym = await prisma.gym.create({
         data: {
           name: 'Super Gym',
-          email: 'contact@supergym.com'
-        }
+          email: 'contact@supergym.com',
+        },
       });
       console.log(`[DB-INIT] Default gym created with ID: ${defaultGym.id}`);
     } else {
-      console.log(`[DB-INIT] Found existing gym: "${defaultGym.name}" (ID: ${defaultGym.id})`);
+      console.log(
+        `[DB-INIT] Found existing gym: "${defaultGym.name}" (ID: ${defaultGym.id})`
+      );
     }
 
     // 2. Ensure Admin user exists
     const adminExists = await prisma.user.findUnique({
-      where: { username: 'admin' }
+      where: { username: 'admin' },
     });
-    
+
     if (!adminExists) {
       console.log('[DB-INIT] Admin user not found. Creating default admin...');
       const hashedPassword = bcrypt.hashSync('admin', 10);
@@ -40,8 +42,8 @@ export const initializeDb = async () => {
           username: 'admin',
           password: hashedPassword,
           role: 'admin',
-          gymId: defaultGym.id
-        }
+          gymId: defaultGym.id,
+        },
       });
       console.log('[DB-INIT] Default admin user created successfully.');
     } else {

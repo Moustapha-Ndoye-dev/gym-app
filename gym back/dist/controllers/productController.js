@@ -8,7 +8,9 @@ const getAllProducts = async (req, res) => {
         res.json(products);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des produits' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des produits' });
     }
 };
 exports.getAllProducts = getAllProducts;
@@ -20,13 +22,18 @@ const getProductById = async (req, res) => {
         res.json(product);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération du produit' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération du produit' });
     }
 };
 exports.getProductById = getProductById;
 const createProduct = async (req, res) => {
     try {
-        const id = await productModel_1.ProductModel.create({ ...req.body, gymId: req.user.gymId });
+        const id = await productModel_1.ProductModel.create({
+            ...req.body,
+            gymId: req.user.gymId,
+        });
         res.status(201).json({ id, message: 'Produit créé avec succès' });
     }
     catch (error) {
@@ -34,7 +41,7 @@ const createProduct = async (req, res) => {
         res.status(500).json({
             message: 'Erreur lors de la création du produit',
             error: error?.message || String(error),
-            details: error
+            details: error,
         });
     }
 };

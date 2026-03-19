@@ -1,8 +1,29 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Dumbbell, Lock, User as UserIcon, ArrowRight, Mail, Phone, CheckCircle2 } from 'lucide-react';
-import axiosInstance from '../api/axiosInstance';
+import { Dumbbell, Lock, User as UserIcon, ArrowRight, ShieldCheck, CheckCircle2, XCircle, Zap, LayoutDashboard } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+const apiFetch = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) (headers as any)['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(url, { ...options, headers });
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  }
+  const text = await response.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (e) {}
+  if (!response.ok) {
+    const error: any = new Error(data?.message || response.statusText);
+    error.response = { data };
+    throw error;
+  }
+  return { data };
+};
 
 export const Login: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -12,17 +33,13 @@ export const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [loginData, setLoginData] = useState({
-    username: '',
-    password: ''
-  });
-
+  const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [registerData, setRegisterData] = useState({
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
-    gymId: 1
+    gymEmail: '',
+    gymName: '',
+    adminUsername: '',
+    adminPassword: '',
+    confirmPassword: ''
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -30,16 +47,14 @@ export const Login: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axiosInstance.post('/api/auth/login', loginData);
+      const res = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(loginData),
+      });
       login(res.data.user, res.data.token);
       navigate('/');
     } catch (err: any) {
-      console.error('Login error:', err);
-      if (!err.response) {
-        setError('Le serveur est injoignable. Vérifiez que le backend est démarré sur le port 5000.');
-      } else {
-        setError(err.response?.data?.message || 'Identifiants incorrects');
-      }
+      setError(err.response?.data?.message || 'Identifiants invalides');
     } finally {
       setLoading(false);
     }
@@ -47,237 +62,123 @@ export const Login: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (registerData.password !== registerData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+    if (registerData.adminPassword !== registerData.confirmPassword) {
+      setError('Mots de passe différents');
       return;
     }
-
     setLoading(true);
     setError('');
-    setSuccess(false);
     try {
-      await axiosInstance.post('/api/auth/register-member', registerData);
+      await apiFetch('/api/auth/register-gym', {
+        method: 'POST',
+        body: JSON.stringify({
+          gymName: registerData.gymName,
+          gymEmail: registerData.gymEmail,
+          adminUsername: registerData.adminUsername,
+          adminPassword: registerData.adminPassword
+        }),
+      });
       setSuccess(true);
-      setTimeout(() => {
-        setMode('login');
-        setSuccess(false);
-      }, 2500);
+      setTimeout(() => { setMode('login'); setSuccess(false); }, 2000);
     } catch (err: any) {
-      console.error('Registration error:', err);
-      if (!err.response) {
-        setError('Le serveur est injoignable. Vérifiez que le backend est démarré sur le port 5000.');
-      } else if (err.response?.data?.errors) {
-        const firstError = err.response.data.errors[0];
-        setError(`${firstError.path}: ${firstError.message}`);
-      } else {
-        const backendMessage = err.response?.data?.message || 'Erreur lors de l\'inscription';
-        const backendError = err.response?.data?.error;
-        setError(backendError ? `${backendMessage} (${backendError})` : backendMessage);
-      }
+      setError(err.response?.data?.message || 'Erreur inscription');
     } finally {
       setLoading(false);
     }
   };
 
+  const features = [
+    { icon: Zap, title: "OS ultra-rapide", desc: "Prêt en quelques secondes." },
+    { icon: LayoutDashboard, title: "Pilotage temps réel", desc: "Suivez tout sur un écran." },
+    { icon: ShieldCheck, title: "Cloud sécurisé", desc: "Données chiffrées." }
+  ];
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 font-sans p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-sans">
+      <div className="absolute inset-0 z-0 opacity-10" style={{ backgroundImage: `radial-gradient(#1e293b 1px, transparent 1px)`, backgroundSize: '24px 24px' }}></div>
+      <div className="absolute top-[-10%] left-[-5%] w-[35%] h-[35%] bg-indigo-600/20 rounded-full blur-[100px]"></div>
       
-      <div className="w-full max-w-[400px]">
-        {/* Branding Area */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100 mb-4">
-            <Dumbbell className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">LGL <span className="text-indigo-600">GYM</span></h1>
-          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Plateforme de Gestion</p>
-        </div>
-
-        {/* Main Login Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
-          <div className="p-6 sm:p-8">
-            
-            {/* Header & Toggle */}
-            <div className="mb-6">
-              <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
-                <button 
-                  onClick={() => setMode('login')}
-                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Connexion
-                </button>
-                <button 
-                  onClick={() => setMode('register')}
-                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Inscription
-                </button>
-              </div>
-
-              <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                {mode === 'login' ? 'Heureux de vous revoir !' : 'Rejoindre l\'aventure'}
-              </h2>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">
-                {mode === 'login' ? 'Saisissez vos identifiants pour continuer.' : 'Email, Identifiant et Mot de passe pour commencer.'}
-              </p>
+      <div className="container max-w-[850px] w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10 p-6">
+        
+        {/* Left Side */}
+        <div className="hidden lg:flex flex-col space-y-6 text-white pr-10 border-r border-white/5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg">
+              <Dumbbell className="h-4 w-4 text-white" />
             </div>
-
-            {/* Alert Messages */}
-            {error && (
-              <div className="mb-5 p-3 bg-red-50 border border-red-100/50 text-red-600 rounded-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="w-1.5 h-1.5 bg-red-500 rounded-full shrink-0"></div>
-                <p className="text-[10px] font-bold leading-tight">{error}</p>
-              </div>
-            )}
-            
-            {success && (
-              <div className="mb-5 p-3 bg-emerald-50 border border-emerald-100/50 text-emerald-600 rounded-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0"></div>
-                <p className="text-[10px] font-bold leading-tight">Inscription réussie ! Redirection...</p>
-              </div>
-            )}
-
-            {/* Login Form */}
-            {mode === 'login' ? (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Utilisateur</label>
-                  <div className="relative group">
-                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input
-                      value={loginData.username}
-                      onChange={(e) => setLoginData({...loginData, username: e.target.value})}
-                      type="text"
-                      required
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900 placeholder:text-slate-400"
-                      placeholder="admin"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center ml-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mot de passe</label>
-                    <a href="#" className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700">Oublié ?</a>
-                  </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                      type="password"
-                      required
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900 placeholder:text-slate-400"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-11 flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-sm shadow-indigo-100 hover:bg-indigo-700 active:scale-[0.98] transition-all text-[12px] font-bold mt-6 group disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                  ) : (
-                    <>
-                      Accéder au Dashboard
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
-              </form>
-            ) : (
-              /* Simplified Register Form */
-              <form onSubmit={handleRegister} className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email</label>
-                  <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input
-                      value={registerData.email}
-                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                      type="email"
-                      required
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900"
-                      placeholder="votre@email.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Identifiant</label>
-                  <div className="relative group">
-                    <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input
-                      value={registerData.username}
-                      onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                      type="text"
-                      required
-                      minLength={3}
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900"
-                      placeholder="Nom d'utilisateur"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Mot de passe</label>
-                    <input
-                      value={registerData.password}
-                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                      type="password"
-                      required
-                      minLength={5}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Confirmer</label>
-                    <input
-                      value={registerData.confirmPassword}
-                      onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                      type="password"
-                      required
-                      minLength={5}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[12px] font-semibold transition-all outline-none text-slate-900"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-11 flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-sm shadow-indigo-100 hover:bg-indigo-700 active:scale-[0.98] transition-all text-[12px] font-bold mt-4 group disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                  ) : (
-                    <>
-                      Créer mon compte
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+            <span className="text-md font-black tracking-tight uppercase tracking-widest">GYM <span className="text-indigo-400">PRO</span></span>
           </div>
           
-          {/* Secure Info Footer */}
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-center flex items-center justify-center gap-2">
-            <Lock className="h-3 w-3 text-slate-400" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Connexion sécurisée SSL</span>
+          <div className="space-y-3">
+            <h1 className="text-3xl font-black leading-tight tracking-tight">L'excellence de la <span className="text-indigo-400">gestion fitness.</span></h1>
+            <p className="text-[13px] text-slate-400 font-medium max-w-sm">Automatisez votre salle avec Gym Pro.</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            {features.map((f, i) => (
+              <div key={i} className="flex items-center gap-2 text-slate-400">
+                <f.icon className="h-3.5 w-3.5 text-indigo-500" />
+                <span className="text-[11px] font-bold uppercase tracking-wider">{f.title}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-[10px] text-slate-400 font-medium">
-            &copy; {new Date().getFullYear()} LGL Gym Management. Tous droits réservés.
-          </p>
-        </div>
+        {/* Right Side */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[320px] mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-6">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">{mode === 'login' ? 'Connexion' : 'Nouvelle salle'}</h2>
+                <p className="text-[11px] text-slate-500 font-medium">GYM PRO Management</p>
+              </div>
+
+              <div className="flex p-1 bg-slate-100 rounded-xl mb-6 border border-slate-200/50">
+                <button onClick={() => setMode('login')} className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Connexion</button>
+                <button onClick={() => setMode('register')} className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'register' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>Inscription</button>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 p-2.5 bg-rose-50 border-l-4 border-rose-500 text-rose-700 rounded-r-lg flex items-center gap-2"><XCircle className="h-3.5 w-3.5 shrink-0" /><p className="text-[10px] font-bold">{error}</p></motion.div>}
+                {success && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 p-2.5 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 rounded-r-lg flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0" /><p className="text-[10px] font-bold">Salle créée !</p></motion.div>}
+              </AnimatePresence>
+
+              {mode === 'login' ? (
+                <form onSubmit={handleLogin} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Utilisateur</label>
+                    <div className="relative group">
+                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} type="text" required className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 text-[12px] font-bold outline-none" placeholder="admin" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center ml-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pass</label><a href="#" className="text-[9px] font-black text-indigo-600">Oublié ?</a></div>
+                    <div className="relative group">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} type="password" required className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 text-[12px] font-bold outline-none" placeholder="••••••••" />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full py-2.5 flex items-center justify-center bg-slate-900 text-white rounded-xl shadow-xl hover:bg-slate-800 active:scale-[0.98] transition-all text-[11px] font-black uppercase tracking-widest mt-6 group disabled:opacity-70">
+                    {loading ? <div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <>Accéder <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" /></>}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleRegister} className="space-y-2.5">
+                  <input value={registerData.gymName} onChange={(e) => setRegisterData({...registerData, gymName: e.target.value})} type="text" required className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600/20 text-[11px] font-bold outline-none" placeholder="Nom de la salle" />
+                  <input value={registerData.gymEmail} onChange={(e) => setRegisterData({...registerData, gymEmail: e.target.value})} type="email" required className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600/20 text-[11px] font-bold outline-none" placeholder="Email contact" />
+                  <input value={registerData.adminUsername} onChange={(e) => setRegisterData({...registerData, adminUsername: e.target.value})} type="text" required className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600/20 text-[11px] font-bold outline-none" placeholder="Identifiant Admin" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={registerData.adminPassword} onChange={(e) => setRegisterData({...registerData, adminPassword: e.target.value})} type="password" required className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600/20 text-[11px] font-bold outline-none" placeholder="Pass" />
+                    <input value={registerData.confirmPassword} onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})} type="password" required className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-600/20 text-[11px] font-bold outline-none" placeholder="Conf" />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl shadow-xl hover:bg-indigo-700 transition-all text-[11px] font-black uppercase tracking-widest mt-4">S'enregistrer</button>
+                </form>
+              )}
+            </div>
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-center"><span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center justify-center gap-1.5"><ShieldCheck className="h-3 w-3 text-emerald-500" /> Sécurisé & Chiffré</span></div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

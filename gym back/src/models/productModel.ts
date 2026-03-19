@@ -26,7 +26,7 @@ export class ProductModel {
         price: data.price,
         stock: data.stock || 0,
         category: data.category || null,
-      }
+      },
     });
     return product.id;
   }
@@ -40,7 +40,7 @@ export class ProductModel {
           price: data.price,
           stock: data.stock,
           category: data.category,
-        }
+        },
       });
       return 1;
     } catch {

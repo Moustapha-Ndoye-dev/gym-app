@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { getAllTransactions, createTransaction, deleteTransaction } from '../controllers/transactionController';
+import {
+  getAllTransactions,
+  createTransaction,
+  deleteTransaction,
+} from '../controllers/transactionController';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -39,16 +43,21 @@ const router = Router();
 
 const transactionSchema = z.object({
   body: z.object({
-    amount: z.number().positive("Le montant doit être positif").or(z.number().negative("Le montant doit être négatif en cas de dépense")),
+    amount: z
+      .number()
+      .positive('Le montant doit être positif')
+      .or(
+        z.number().negative('Le montant doit être négatif en cas de dépense')
+      ),
     type: z.enum(['income', 'expense']),
-    description: z.string().optional().or(z.literal(''))
-  })
+    description: z.string().optional().or(z.literal('')),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);

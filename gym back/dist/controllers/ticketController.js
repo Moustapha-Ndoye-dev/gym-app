@@ -8,7 +8,9 @@ const getAllTickets = async (req, res) => {
         res.json(tickets);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des tickets' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des tickets' });
     }
 };
 exports.getAllTickets = getAllTickets;
@@ -22,7 +24,7 @@ const createTicket = async (req, res) => {
         res.status(500).json({
             message: 'Erreur lors de la création du ticket',
             error: error?.message || String(error),
-            details: error
+            details: error,
         });
     }
 };

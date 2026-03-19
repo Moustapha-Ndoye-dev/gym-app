@@ -16,33 +16,46 @@ class UserModel {
     static async findById(id) {
         return db_1.default.user.findUnique({
             where: { id },
-            select: { id: true, username: true, role: true, createdAt: true, gymId: true }
+            select: {
+                id: true,
+                username: true,
+                role: true,
+                createdAt: true,
+                gymId: true,
+            },
         });
     }
     static async createUser(username, password, role, gymId, email) {
-        console.log(`[USER-MODEL] Attempting to create user: username="${username}", email="${email}", role="${role}", gymId=${gymId}`);
         const hashedPassword = await bcryptjs_1.default.hash(password, 10);
+        const userData = {
+            username,
+            email,
+            password: hashedPassword,
+            role,
+            gymId,
+        };
+        console.log('[USER-MODEL-TRACE] Calling prisma.user.create with:', JSON.stringify(userData, (key, value) => key === 'password' ? '***' : value, 2));
         try {
             const user = await db_1.default.user.create({
-                data: {
-                    username,
-                    email,
-                    password: hashedPassword,
-                    role,
-                    gymId
-                }
+                data: userData,
             });
-            console.log(`[USER-MODEL] User created successfully. ID: ${user.id}`);
+            console.log(`[USER-MODEL-TRACE] User created successfully:`, JSON.stringify(user, null, 2));
             return user;
         }
         catch (error) {
-            console.error(`[USER-MODEL] Error in prisma.user.create:`, error);
+            console.error(`[USER-MODEL-TRACE] !!! prisma.user.create FAILED !!! Details:`, error);
             throw error;
         }
     }
     static async getAll() {
         return db_1.default.user.findMany({
-            select: { id: true, username: true, role: true, createdAt: true, gymId: true }
+            select: {
+                id: true,
+                username: true,
+                role: true,
+                createdAt: true,
+                gymId: true,
+            },
         });
     }
     static async update(id, username, role, password) {
@@ -53,7 +66,7 @@ class UserModel {
         try {
             await db_1.default.user.update({
                 where: { id },
-                data: dataToUpdate
+                data: dataToUpdate,
             });
             return 1; // 1 change
         }

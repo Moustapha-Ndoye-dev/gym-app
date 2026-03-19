@@ -8,21 +8,26 @@ const getAllActivities = async (req, res) => {
         res.json(activities);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des activités' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des activités' });
     }
 };
 exports.getAllActivities = getAllActivities;
 const createActivity = async (req, res) => {
     try {
-        const id = await activityModel_1.ActivityModel.create({ ...req.body, gymId: req.user.gymId });
+        const id = await activityModel_1.ActivityModel.create({
+            ...req.body,
+            gymId: req.user.gymId,
+        });
         res.status(201).json({ id, message: 'Activité créée avec succès' });
     }
     catch (error) {
         console.error('CreateActivity error:', error);
         res.status(500).json({
-            message: 'Erreur lors de la création de l\'activité',
+            message: "Erreur lors de la création de l'activité",
             error: error?.message || String(error),
-            details: error
+            details: error,
         });
     }
 };

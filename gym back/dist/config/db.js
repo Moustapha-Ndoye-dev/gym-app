@@ -8,7 +8,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 // Charge le bon fichier .env même si le backend est lancé depuis un autre dossier.
 dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../../.env') });
-const client_1 = require("../generated/client");
+const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 // Fonction d'initialisation pour insérer l'admin par défaut
@@ -22,8 +22,8 @@ const initializeDb = async () => {
             defaultGym = await prisma.gym.create({
                 data: {
                     name: 'Super Gym',
-                    email: 'contact@supergym.com'
-                }
+                    email: 'contact@supergym.com',
+                },
             });
             console.log(`[DB-INIT] Default gym created with ID: ${defaultGym.id}`);
         }
@@ -32,7 +32,7 @@ const initializeDb = async () => {
         }
         // 2. Ensure Admin user exists
         const adminExists = await prisma.user.findUnique({
-            where: { username: 'admin' }
+            where: { username: 'admin' },
         });
         if (!adminExists) {
             console.log('[DB-INIT] Admin user not found. Creating default admin...');
@@ -42,8 +42,8 @@ const initializeDb = async () => {
                     username: 'admin',
                     password: hashedPassword,
                     role: 'admin',
-                    gymId: defaultGym.id
-                }
+                    gymId: defaultGym.id,
+                },
             });
             console.log('[DB-INIT] Default admin user created successfully.');
         }

@@ -8,7 +8,9 @@ const getAllTransactions = async (req, res) => {
         res.json(transactions);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des transactions' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des transactions' });
     }
 };
 exports.getAllTransactions = getAllTransactions;
@@ -23,7 +25,7 @@ const createTransaction = async (req, res) => {
         res.status(500).json({
             message: 'Erreur lors de la création de la transaction',
             error: error?.message || String(error),
-            details: error
+            details: error,
         });
     }
 };

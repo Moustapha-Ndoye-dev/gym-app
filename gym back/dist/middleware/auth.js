@@ -8,16 +8,21 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth = (req, res, next) => {
     const authHeader = req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Accès refusé. Aucun jeton fourni ou format invalide.' });
+        return res
+            .status(401)
+            .json({
+            message: 'Accès refusé. Aucun jeton fourni ou format invalide.',
+        });
     }
     const token = authHeader.replace('Bearer ', '');
     try {
-        const secret = process.env.JWT_SECRET || 'fallback_secret';
+        const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
         const verified = jsonwebtoken_1.default.verify(token, secret);
         req.user = verified;
         next();
     }
     catch (error) {
+        console.error(`[AUTH-ERROR] JWT Verification failed: ${error.message}`);
         res.status(401).json({ message: 'Jeton invalide ou expiré.' });
     }
 };
@@ -25,7 +30,9 @@ exports.auth = auth;
 const requireRole = (roles) => {
     return (req, res, next) => {
         if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ message: 'Accès interdit. Rôle non autorisé.' });
+            return res
+                .status(403)
+                .json({ message: 'Accès interdit. Rôle non autorisé.' });
         }
         next();
     };

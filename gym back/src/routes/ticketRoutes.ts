@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { getAllTickets, createTicket, deleteTicket } from '../controllers/ticketController';
+import {
+  getAllTickets,
+  createTicket,
+  deleteTicket,
+} from '../controllers/ticketController';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -33,15 +37,15 @@ const router = Router();
 
 const ticketSchema = z.object({
   body: z.object({
-    type: z.string().min(2, "Le type est requis"),
-    price: z.number().positive("Le prix doit être positif")
-  })
+    type: z.string().min(2, 'Le type est requis'),
+    price: z.number().positive('Le prix doit être positif'),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);

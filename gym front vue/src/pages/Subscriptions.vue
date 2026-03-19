@@ -16,7 +16,15 @@
 
     <!-- Mobile View (Cards) -->
     <div class="lg:hidden space-y-2.5">
-      <div v-for="sub in subscriptions" :key="sub.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
+      <div
+        v-if="subscriptions.length === 0"
+        class="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center"
+      >
+        <CreditCard class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+        <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucun abonnement trouvé</p>
+        <p class="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre premier abonnement.</p>
+      </div>
+      <div v-else v-for="sub in subscriptions" :key="sub.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
         <div class="flex justify-between items-start">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm shrink-0">
@@ -31,7 +39,7 @@
         <div class="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100 mt-1">
           <div>
             <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Prix</div>
-            <div class="text-[13px] font-extrabold text-emerald-600">{{ sub.price.toFixed(2) }} €</div>
+            <div class="text-[13px] font-extrabold text-emerald-600">{{ sub.price.toFixed(2) }} FCFA</div>
           </div>
           <div>
             <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Durée</div>
@@ -85,7 +93,7 @@
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="text-[12px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                  {{ sub.price.toFixed(2) }} €
+                  {{ sub.price.toFixed(2) }} FCFA
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
@@ -127,7 +135,7 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 mb-1">Prix (€)</label>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">Prix (FCFA)</label>
               <input v-model.number="currentSub.price" type="number" step="0.01" required min="0" class="block w-full px-2.5 py-2 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[11px] font-medium text-slate-900 transition-all outline-none" />
             </div>
             <div>

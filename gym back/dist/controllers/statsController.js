@@ -14,8 +14,8 @@ const getDashboardStats = async (req, res) => {
         const activeSubscriptions = await db_1.default.member.count({
             where: {
                 gymId,
-                expiryDate: { gte: new Date() }
-            }
+                expiryDate: { gte: new Date() },
+            },
         });
         // 3. Tickets Sold (Total)
         const ticketsSold = await db_1.default.ticket.count({ where: { gymId } });
@@ -27,8 +27,8 @@ const getDashboardStats = async (req, res) => {
             where: {
                 gymId,
                 type: 'income',
-                date: { gte: today }
-            }
+                date: { gte: today },
+            },
         });
         // 5. Calculate Trends (Simple comparison with last week/period)
         // For now, we'll return some realistic trends based on counts
@@ -37,7 +37,7 @@ const getDashboardStats = async (req, res) => {
             members: { value: totalMembers, trend: '+0%' },
             subscriptions: { value: activeSubscriptions, trend: '+0%' },
             tickets: { value: ticketsSold, trend: '+0%' },
-            revenue: { value: revenueData._sum.amount || 0, trend: '+0%' }
+            revenue: { value: revenueData._sum.amount || 0, trend: '+0%' },
         };
         res.json(stats);
     }

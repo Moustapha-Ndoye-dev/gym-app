@@ -14,7 +14,7 @@ export class TransactionModel {
     return prisma.transaction.findMany({
       where: { gymId },
       orderBy: { date: 'desc' },
-      include: { user: true, gym: true }
+      include: { user: true, gym: true },
     });
   }
 
@@ -25,8 +25,8 @@ export class TransactionModel {
         amount: data.amount,
         type: data.type,
         description: data.description || null,
-        userId: data.user_id || null
-      }
+        userId: data.user_id || null,
+      },
     });
     return transaction.id;
   }

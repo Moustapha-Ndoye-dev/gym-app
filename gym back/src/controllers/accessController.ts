@@ -4,16 +4,24 @@ import { TicketModel } from '../models/ticketModel';
 import { AuthRequest } from '../middleware/auth';
 import { Response } from 'express';
 
-export const getLogs = async (req: AuthRequest, res: Response): Promise<any> => {
+export const getLogs = async (
+  req: AuthRequest,
+  res: Response
+): Promise<any> => {
   try {
     const logs = await AccessModel.getLogs(req.user.gymId);
     res.json(logs);
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la récupération des logs' });
+    res
+      .status(500)
+      .json({ message: 'Erreur lors de la récupération des logs' });
   }
 };
 
-export const verifyAccess = async (req: AuthRequest, res: Response): Promise<any> => {
+export const verifyAccess = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { qr_code } = req.body;
     let member_id: number | null = null;
@@ -31,20 +39,22 @@ export const verifyAccess = async (req: AuthRequest, res: Response): Promise<any
           foundInDb = true;
           member_id = parsedId;
           const now = new Date();
-          const expiryDate = (member as any).expiryDate;
-          
+          const expiryDate = member.expiryDate;
+
           if (expiryDate && new Date(expiryDate) > now) {
             granted = true;
             message = 'Accès autorisé';
           } else {
             granted = false;
-            message = expiryDate ? 'Abonnement expiré' : 'Aucun abonnement actif';
+            message = expiryDate
+              ? 'Abonnement expiré'
+              : 'Aucun abonnement actif';
           }
 
           memberData = {
-            firstName: (member as any).firstName,
-            lastName: (member as any).lastName,
-            photo: (member as any).photo
+            firstName: member.firstName,
+            lastName: member.lastName,
+            photo: member.photo,
           };
         } else {
           message = 'Membre introuvable ou non autorisé';
@@ -71,7 +81,11 @@ export const verifyAccess = async (req: AuthRequest, res: Response): Promise<any
     }
 
     if (foundInDb) {
-      await AccessModel.logAccess(member_id, ticket_id, granted ? 'granted' : 'denied');
+      await AccessModel.logAccess(
+        member_id,
+        ticket_id,
+        granted ? 'granted' : 'denied'
+      );
     }
 
     res.json({ granted, message, member: memberData });

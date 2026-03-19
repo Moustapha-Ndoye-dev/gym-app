@@ -35,16 +35,16 @@ const router = (0, express_1.Router)();
  */
 const productSchema = zod_1.z.object({
     body: zod_1.z.object({
-        name: zod_1.z.string().min(2, "Le nom est requis"),
-        price: zod_1.z.number().positive("Le prix doit être positif"),
+        name: zod_1.z.string().min(2, 'Le nom est requis'),
+        price: zod_1.z.number().positive('Le prix doit être positif'),
         stock: zod_1.z.number().int().min(0).optional(),
-        category: zod_1.z.string().optional()
-    })
+        category: zod_1.z.string().optional(),
+    }),
 });
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 /**

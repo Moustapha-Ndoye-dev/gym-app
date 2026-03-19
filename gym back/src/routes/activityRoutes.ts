@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { getAllActivities, createActivity, updateActivity, deleteActivity } from '../controllers/activityController';
+import {
+  getAllActivities,
+  createActivity,
+  updateActivity,
+  deleteActivity,
+} from '../controllers/activityController';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -38,18 +43,18 @@ const router = Router();
 
 const activitySchema = z.object({
   body: z.object({
-    name: z.string().min(2, "Le nom est requis"),
+    name: z.string().min(2, 'Le nom est requis'),
     description: z.string().optional().or(z.literal('')),
     instructor: z.string().optional().or(z.literal('')),
     schedule: z.string().optional().or(z.literal('')),
-    capacity: z.number().int().positive().optional()
-  })
+    capacity: z.number().int().positive().optional(),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);
@@ -109,7 +114,12 @@ router.post('/', validate(activitySchema), createActivity);
  *           schema:
  *             $ref: '#/components/schemas/Activity'
  */
-router.put('/:id', validate(idSchema), validate(activitySchema), updateActivity);
+router.put(
+  '/:id',
+  validate(idSchema),
+  validate(activitySchema),
+  updateActivity
+);
 
 /**
  * @swagger

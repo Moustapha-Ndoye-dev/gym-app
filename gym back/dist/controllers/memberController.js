@@ -9,7 +9,9 @@ const getAllMembers = async (req, res) => {
     }
     catch (error) {
         console.error('GetAllMembers error:', error);
-        res.status(500).json({ message: 'Erreur lors de la récupération des membres', error });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des membres', error });
     }
 };
 exports.getAllMembers = getAllMembers;
@@ -20,7 +22,7 @@ const createMember = async (req, res) => {
     }
     catch (error) {
         if (error.code === 'P2002') {
-            return res.status(400).json({ message: 'L\'adresse email existe déjà' });
+            return res.status(400).json({ message: "L'adresse email existe déjà" });
         }
         res.status(500).json({ message: 'Erreur lors de la création du membre' });
     }

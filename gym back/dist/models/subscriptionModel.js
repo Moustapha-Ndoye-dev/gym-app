@@ -20,7 +20,7 @@ class SubscriptionModel {
                 price: data.price,
                 durationMonths: data.durationMonths,
                 features: data.features || null,
-            }
+            },
         });
         return subscription.id;
     }
@@ -33,7 +33,7 @@ class SubscriptionModel {
                     price: data.price,
                     durationMonths: data.durationMonths,
                     features: data.features || null,
-                }
+                },
             });
             return 1;
         }

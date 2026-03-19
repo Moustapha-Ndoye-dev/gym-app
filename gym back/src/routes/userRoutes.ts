@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { getAllUsers, createUser, updateUser, deleteUser } from '../controllers/userController';
+import {
+  getAllUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+} from '../controllers/userController';
 import { auth, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -34,16 +39,21 @@ const router = Router();
 
 const userSchema = z.object({
   body: z.object({
-    username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-    password: z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères").optional(),
-    role: z.enum(['admin', 'cashier', 'controller'])
-  })
+    username: z
+      .string()
+      .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+    password: z
+      .string()
+      .min(5, 'Le mot de passe doit contenir au moins 5 caractères')
+      .optional(),
+    role: z.enum(['admin', 'cashier', 'controller']),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);

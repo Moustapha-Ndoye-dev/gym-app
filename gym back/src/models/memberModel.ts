@@ -1,93 +1,108 @@
 import prisma from '../config/db';
-
-export interface Member {
-  id?: number;
-  gymId?: number;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  email?: string;
-  registration_date?: string;
-  expiry_date?: string;
-  subscription_id?: number;
-  photo?: string;
-}
+import { Member } from '@prisma/client';
+import { MemberWithSubscription } from '../types';
 
 export class MemberModel {
-  static async getAll(gymId: number) {
+  static async getAll(gymId: number): Promise<MemberWithSubscription[]> {
     return prisma.member.findMany({
       where: { gymId },
       orderBy: { registrationDate: 'desc' },
-      include: { gym: true, subscription: true }
+      include: { subscription: true },
     });
   }
 
-  static async getById(id: number, gymId: number) {
-    return prisma.member.findUnique({ 
-      where: { id, gymId }, 
-      include: { gym: true, subscription: true } 
+  static async getById(
+    id: number,
+    gymId: number
+  ): Promise<MemberWithSubscription | null> {
+    return prisma.member.findUnique({
+      where: { id, gymId },
+      include: { subscription: true },
     });
   }
 
-  static async create(data: Member & { gymId?: number; subscriptionId?: number }) {
-    return prisma.$transaction(async (tx) => {
-      let expiryDate = null;
-      let amount = 0;
-      const gymId = data.gymId || data.subscription_id || 1; // Fallback to 1 if not provided
+  static async create(data: Partial<Member> & { gymId: number, durationMonths?: number }) {
+    console.log('[MEMBER-MODEL-TRACE] Entering create method with data:', JSON.stringify(data, null, 2));
+    try {
+      return await prisma.$transaction(async (tx) => {
+        console.log('[MEMBER-MODEL-TRACE] Starting transaction.');
+        let expiryDate = null;
+        let amount = 0;
 
-      if (data.subscriptionId || data.subscription_id) {
-        const subId = data.subscriptionId || data.subscription_id;
-        const subscription = await tx.subscription.findUnique({
-          where: { id: subId }
-        });
-        if (subscription) {
-          const date = new Date();
-          date.setMonth(date.getMonth() + subscription.durationMonths);
-          expiryDate = date;
-          amount = subscription.price;
-        }
-      }
+        // Determine duration: custom choice or default from subscription
+        let finalDuration = data.durationMonths || 0;
 
-      const member = await tx.member.create({
-        data: {
-          gymId: gymId,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          phone: data.phone || null,
-          email: data.email || null,
-          photo: data.photo || null,
-          subscriptionId: data.subscriptionId || data.subscription_id || null,
-          expiryDate: expiryDate
-        }
-      });
+        if (data.subscriptionId) {
+          console.log('[MEMBER-MODEL-TRACE] Subscription ID found:', data.subscriptionId);
+          const subscription = await tx.subscription.findUnique({
+            where: { id: data.subscriptionId },
+          });
+          
+          if (subscription) {
+            // If no custom duration provided, use the subscription's default
+            if (!finalDuration) {
+              finalDuration = subscription.durationMonths;
+            }
+            
+            const date = new Date();
+            date.setMonth(date.getMonth() + finalDuration);
+            expiryDate = date;
+            
+            // Adjust price based on duration (simple proportional calculation if custom)
+            // Or just use subscription price if it's the default duration
+            amount = finalDuration === subscription.durationMonths 
+              ? subscription.price 
+              : (subscription.price / subscription.durationMonths) * finalDuration;
 
-      if (amount > 0) {
-        await tx.transaction.create({
-          data: {
-            gymId: gymId,
-            amount: amount,
-            type: 'income',
-            description: `Adhesion membre: ${data.first_name} ${data.last_name}`,
-            date: new Date()
+            console.log('[MEMBER-MODEL-TRACE] Subscription details processed:', { expiryDate, amount, finalDuration });
           }
-        });
-      }
+        }
 
-      return member.id;
-    });
+        const memberData = {
+          gymId: data.gymId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email,
+          photo: data.photo,
+          subscriptionId: data.subscriptionId,
+          expiryDate: expiryDate,
+          registrationDate: new Date(), // Force current date to avoid invalid date issues
+        };
+
+        console.log('[MEMBER-MODEL-TRACE] Calling tx.member.create with:', JSON.stringify(memberData, null, 2));
+        const member = await tx.member.create({ data: memberData });
+        console.log('[MEMBER-MODEL-TRACE] tx.member.create returned:', JSON.stringify(member, null, 2));
+
+
+        if (amount > 0) {
+          console.log('[MEMBER-MODEL-TRACE] Creating transaction for amount:', amount);
+          await tx.transaction.create({
+            data: {
+              gymId: data.gymId,
+              amount: amount,
+              type: 'income',
+              description: `Adhesion membre: ${data.firstName} ${data.lastName} (${finalDuration} mois)`,
+              date: new Date(),
+            },
+          });
+          console.log('[MEMBER-MODEL-TRACE] Transaction created.');
+        }
+
+        console.log('[MEMBER-MODEL-TRACE] Transaction finished, returning member.id:', member.id);
+        return member.id;
+      });
+    } catch (error) {
+      console.error('[MEMBER-MODEL-TRACE] !!! TRANSACTION FAILED !!! Details:', error);
+      throw error;
+    }
   }
 
-  static async update(id: number, gymId: number, data: Member) {
+  static async update(id: number, gymId: number, data: Partial<Member>) {
     try {
       await prisma.member.update({
         where: { id, gymId },
-        data: {
-          firstName: data.first_name,
-          lastName: data.last_name,
-          phone: data.phone || null,
-          email: data.email || null,
-          photo: data.photo || null,
-        }
+        data,
       });
       return 1;
     } catch {
@@ -104,3 +119,4 @@ export class MemberModel {
     }
   }
 }
+

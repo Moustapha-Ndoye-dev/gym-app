@@ -93,12 +93,17 @@ export const Dashboard: React.FC = () => {
         setChartData(computedChartData);
         setHasRevenueData(computedChartData.some((p) => p.revenus > 0));
 
-        // Populate recent members
-        if (members.length > 0) {
+        // Populate recent members from statsRes if available, otherwise from membersRes
+        if (statsRes.data?.recentMembers) {
+          setRecentMembers(statsRes.data.recentMembers);
+        } else if (members.length > 0) {
           setRecentMembers(
-            members.slice(0, 4).map((m: any) => ({
-              ...m,
-              badge: 'Nouveau',
+            members.slice(0, 5).map((m: any) => ({
+              id: m.id,
+              firstName: m.firstName || m.first_name,
+              lastName: m.lastName || m.last_name,
+              registrationDate: m.registrationDate || m.registration_date || m.createdAt,
+              subscriptionName: m.subscription?.name || 'Standard'
             })),
           );
         } else {
@@ -119,7 +124,7 @@ export const Dashboard: React.FC = () => {
     { title: 'Adhérents', value: stats.members, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', trend: trends.members },
     { title: 'Abonnements', value: stats.activeSubscriptions, icon: Activity, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', trend: trends.activeSubscriptions },
     { title: 'Tickets', value: stats.ticketsSold, icon: Ticket, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', trend: trends.ticketsSold },
-    { title: 'Revenus', value: `${stats.dailyRevenue} €`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', trend: trends.revenue },
+    { title: 'Revenus', value: `${stats.dailyRevenue} FCFA`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', trend: trends.revenue },
   ];
 
   return (
@@ -189,12 +194,12 @@ export const Dashboard: React.FC = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748B', fontWeight: 600 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748B', fontWeight: 600 }} tickFormatter={(value) => `${value}€`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748B', fontWeight: 600 }} tickFormatter={(value) => `${value}FCFA`} />
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', padding: '8px' }}
                     labelStyle={{ fontWeight: 'bold', color: '#0F172A', marginBottom: '2px', fontSize: '11px' }}
                     itemStyle={{ fontWeight: 600, fontSize: '11px' }}
-                    formatter={(value: any) => [`${value} €`, 'Revenus']}
+                    formatter={(value: any) => [`${value} FCFA`, 'Revenus']}
                   />
                   <Area type="monotone" dataKey="revenus" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenus)" />
                 </AreaChart>
@@ -209,8 +214,8 @@ export const Dashboard: React.FC = () => {
         
         <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-200/60 flex flex-col">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[13px] sm:text-[14px] font-extrabold text-slate-900 tracking-tight">Derniers Inscrits</h2>
-            <button className="text-[10px] sm:text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors">Voir tout</button>
+            <h2 className="text-[13px] sm:text-[14px] font-extrabold text-slate-900 tracking-tight">Derniers Adhérents</h2>
+            <button onClick={() => window.location.href='/members'} className="text-[10px] sm:text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors">Voir tout</button>
           </div>
           <div className="space-y-2 flex-1">
             {loading ? (
@@ -219,37 +224,35 @@ export const Dashboard: React.FC = () => {
               </div>
             ) : recentMembers.length === 0 ? (
               <div className="text-[11px] sm:text-[12px] text-slate-500 font-medium text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/60">
-                Aucun membre récent pour le moment.
+                Aucun adhérent récent pour le moment.
               </div>
             ) : (
               recentMembers.map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-lg transition-all cursor-pointer group">
                   <div className="flex items-center">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 text-[10px] sm:text-[11px] font-bold mr-2.5 shadow-sm group-hover:shadow-md transition-shadow uppercase">
-              {(member.firstName || member.first_name)?.[0]}{(member.lastName || member.last_name)?.[0]}
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] sm:text-[11px] font-bold mr-2.5 shadow-sm group-hover:shadow-md transition-shadow uppercase">
+                      {(member.firstName || member.first_name)?.[0]}{(member.lastName || member.last_name)?.[0]}
                     </div>
                     <div>
                       <p className="text-[11px] sm:text-[12px] font-bold text-slate-900">{member.firstName || member.first_name} {member.lastName || member.last_name}</p>
                       <p className="text-[9px] sm:text-[10px] font-medium text-slate-500 mt-0.5">
-                        {(() => {
-                          const v = member.createdAt || member.registrationDate || member.registration_date;
+                        {member.subscriptionName || 'Membre'} • {(() => {
+                          const v = member.registrationDate || member.registration_date || member.createdAt;
                           const d = new Date(v);
-                          return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+                          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR');
                         })()}
                       </p>
                     </div>
                   </div>
-                  {member.badge && (
-                    <div className="text-[8px] sm:text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
-                      {member.badge}
-                    </div>
-                  )}
+                  <div className="text-[8px] sm:text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                    Actif
+                  </div>
                 </div>
               ))
             )}
           </div>
-          <button className="w-full mt-3 py-2 border border-slate-200/60 rounded-lg text-[11px] sm:text-[12px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-            Ajouter un membre
+          <button onClick={() => window.location.href='/members'} className="w-full mt-3 py-2 bg-slate-900 text-white rounded-lg text-[11px] sm:text-[12px] font-bold hover:bg-indigo-600 transition-colors shadow-sm shadow-slate-200">
+            Nouveau membre
           </button>
         </div>
       </div>

@@ -20,7 +20,7 @@ class ProductModel {
                 price: data.price,
                 stock: data.stock || 0,
                 category: data.category || null,
-            }
+            },
         });
         return product.id;
     }
@@ -33,7 +33,7 @@ class ProductModel {
                     price: data.price,
                     stock: data.stock,
                     category: data.category,
-                }
+                },
             });
             return 1;
         }

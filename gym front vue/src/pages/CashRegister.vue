@@ -20,7 +20,7 @@
         <div class="flex justify-between items-start relative z-10">
           <div>
             <p class="text-emerald-100 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">Solde du jour</p>
-            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">{{ dailyTotal.toFixed(2) }} €</h2>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">{{ dailyTotal.toFixed(2) }} FCFA</h2>
           </div>
           <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
             <TrendingUp class="h-5 w-5 text-white" />
@@ -31,7 +31,15 @@
 
     <!-- Mobile View (Cards) -->
     <div class="lg:hidden space-y-2.5">
-      <div v-for="transaction in transactions" :key="transaction.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
+      <div
+        v-if="transactions.length === 0"
+        class="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center"
+      >
+        <DollarSign class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+        <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucune transaction</p>
+        <p class="text-[11px] text-slate-500 mt-1">Les encaissements et décaissements apparaîtront ici.</p>
+      </div>
+      <div v-else v-for="transaction in transactions" :key="transaction.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
         <div class="flex justify-between items-start">
           <div class="flex items-center gap-2.5">
             <div :class="['w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 border', transaction.type === 'income' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100']">
@@ -44,7 +52,7 @@
             </div>
           </div>
           <div :class="['text-[13px] font-extrabold whitespace-nowrap', transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600']">
-            {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount.toFixed(2) }} €
+            {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount.toFixed(2) }} FCFA
           </div>
         </div>
         <div class="pt-2.5 border-t border-slate-100 mt-1">
@@ -69,7 +77,14 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100/80">
-            <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-slate-50/50 transition-colors group">
+            <tr v-if="transactions.length === 0">
+              <td colspan="5" class="px-4 py-12 text-center">
+                <DollarSign class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucune transaction trouvée</p>
+                <p class="text-[11px] text-slate-500 mt-1">Utilisez le bouton en haut pour enregistrer une opération.</p>
+              </td>
+            </tr>
+            <tr v-else v-for="transaction in transactions" :key="transaction.id" class="hover:bg-slate-50/50 transition-colors group">
               <td class="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
                 {{ new Date(transaction.date).toLocaleDateString('fr-FR') }} à {{ new Date(transaction.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) }}
               </td>
@@ -83,7 +98,7 @@
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span :class="['text-[12px] font-extrabold', transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600']">
-                  {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount.toFixed(2) }} €
+                  {{ transaction.type === 'income' ? '+' : '-' }}{{ transaction.amount.toFixed(2) }} FCFA
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right text-[11px] font-medium">
@@ -122,7 +137,7 @@
             </div>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">Montant (€)</label>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">Montant (FCFA)</label>
             <input v-model.number="newTransaction.amount" type="number" step="0.01" required min="0.01" class="block w-full px-2.5 py-2 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[11px] font-medium text-slate-900 transition-all outline-none" placeholder="0.00" />
           </div>
           <div>

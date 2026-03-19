@@ -1,0 +1,5 @@
+node_modules/
+dist/
+prisma/gym_database.sqlite
+.env
+*.log

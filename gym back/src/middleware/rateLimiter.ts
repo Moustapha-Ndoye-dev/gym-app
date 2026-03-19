@@ -6,7 +6,10 @@ export const apiLimiter = rateLimit({
   max: 10000, // Effectively disabled for testing
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+  message: {
+    message:
+      'Too many requests from this IP, please try again after 15 minutes',
+  },
 });
 
 // Stricter rate limiter for login
@@ -15,5 +18,8 @@ export const loginLimiter = rateLimit({
   max: 1000, // Effectively disabled for testing
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many login attempts from this IP, please try again after an hour' }
+  message: {
+    message:
+      'Too many login attempts from this IP, please try again after an hour',
+  },
 });

@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { getAllMembers, createMember, updateMember, deleteMember } from '../controllers/memberController';
+import {
+  getAllMembers,
+  createMember,
+  updateMember,
+  deleteMember,
+} from '../controllers/memberController';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -40,17 +45,23 @@ const router = Router();
 
 const memberSchema = z.object({
   body: z.object({
-    first_name: z.string().min(2, "Le prénom est requis"),
-    last_name: z.string().min(2, "Le nom est requis"),
+    first_name: z.string().min(2, 'Le prénom est requis'),
+    last_name: z.string().min(2, 'Le nom est requis'),
     phone: z.string().optional(),
-    email: z.string().email("Format d'email invalide").optional().or(z.literal(''))
-  })
+    email: z
+      .string()
+      .email("Format d'email invalide")
+      .optional()
+      .or(z.literal('')),
+  }),
 });
+
+const updateMemberSchema = memberSchema.partial();
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);
@@ -123,7 +134,12 @@ router.post('/', validate(memberSchema), createMember);
  *       404:
  *         description: Membre introuvable
  */
-router.put('/:id', validate(idSchema), validate(memberSchema), updateMember);
+router.put(
+  '/:id',
+  validate(idSchema),
+  validate(updateMemberSchema),
+  updateMember
+);
 
 /**
  * @swagger

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, CreditCard, Tag } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
+import { useConfirm } from '../context/ConfirmContext';
+import { useNotification } from '../context/NotificationContext';
 
 type Subscription = {
   id: number;
@@ -23,6 +25,9 @@ export const Subscriptions: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSub, setCurrentSub] = useState<Partial<Subscription>>({ activities: [] });
+
+  const { confirm } = useConfirm();
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     fetchData();
@@ -53,20 +58,29 @@ export const Subscriptions: React.FC = () => {
       await axiosInstance[method.toLowerCase() as 'put' | 'post'](url, currentSub);
       setIsModalOpen(false);
       fetchData();
+      showNotification('Abonnement enregistré avec succès', 'success');
     } catch (error) {
       console.error('Error saving subscription:', error);
+      showNotification('Erreur lors de l\'enregistrement', 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet abonnement ?')) {
-      try {
-        await axiosInstance.delete(`/api/subscriptions/${id}`);
-        fetchData();
-      } catch (error) {
-        console.error('Error deleting subscription:', error);
+    confirm({
+      title: 'Supprimer l\'abonnement',
+      message: 'Êtes-vous sûr de vouloir supprimer cet abonnement ? Cette action est irréversible.',
+      confirmText: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/api/subscriptions/${id}`);
+          fetchData();
+          showNotification('Abonnement supprimé avec succès', 'success');
+        } catch (error) {
+          console.error('Error deleting subscription:', error);
+          showNotification('Erreur lors de la suppression', 'error');
+        }
       }
-    }
+    });
   };
 
   const toggleActivity = (activityId: number) => {
@@ -96,52 +110,60 @@ export const Subscriptions: React.FC = () => {
 
       {/* Mobile View (Cards) */}
       <div className="lg:hidden space-y-2.5">
-        {subscriptions.map((sub) => (
-          <div key={sub.id} className="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm shrink-0">
-                  <CreditCard className="h-4 w-4 text-indigo-500" />
+        {subscriptions.length === 0 ? (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center">
+            <CreditCard className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-[13px] font-bold text-slate-900 leading-tight">Aucun abonnement trouvé</p>
+            <p className="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre premier abonnement.</p>
+          </div>
+        ) : (
+          subscriptions.map((sub) => (
+            <div key={sub.id} className="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm shrink-0">
+                    <CreditCard className="h-4 w-4 text-indigo-500" />
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-bold text-slate-900 leading-tight mb-0.5">{sub.name}</div>
+                    <div className="text-[11px] font-medium text-slate-500 line-clamp-1">{sub.description}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100 mt-1">
+                <div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Prix</div>
+                  <div className="text-[13px] font-extrabold text-emerald-600">{sub.price.toFixed(2)} FCFA</div>
                 </div>
                 <div>
-                  <div className="text-[13px] font-bold text-slate-900 leading-tight mb-0.5">{sub.name}</div>
-                  <div className="text-[11px] font-medium text-slate-500 line-clamp-1">{sub.description}</div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Durée</div>
+                  <div className="text-[11px] font-bold text-slate-700">{sub.duration_months} mois</div>
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100 mt-1">
-              <div>
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Prix</div>
-                <div className="text-[13px] font-extrabold text-emerald-600">{sub.price.toFixed(2)} €</div>
+              <div className="pt-2.5 border-t border-slate-100 mt-1">
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Activités incluses</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {sub.activities.map(actId => {
+                    const act = activities.find(a => a.id === actId);
+                    return act ? (
+                      <span key={actId} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold border border-slate-200">
+                        {act.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
               </div>
-              <div>
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Durée</div>
-                <div className="text-[11px] font-bold text-slate-700">{sub.duration_months} mois</div>
-              </div>
-            </div>
-            <div className="pt-2.5 border-t border-slate-100 mt-1">
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Activités incluses</div>
-              <div className="flex flex-wrap gap-1.5">
-                {sub.activities.map(actId => {
-                  const act = activities.find(a => a.id === actId);
-                  return act ? (
-                    <span key={actId} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold border border-slate-200">
-                      {act.name}
-                    </span>
-                  ) : null;
-                })}
+              <div className="flex gap-2 pt-2.5 border-t border-slate-100 mt-1">
+                <button onClick={() => { setCurrentSub(sub); setIsModalOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[11px] font-bold hover:bg-indigo-100 transition-colors border border-indigo-100">
+                  <Edit className="h-3.5 w-3.5" /> Modifier
+                </button>
+                <button onClick={() => handleDelete(sub.id)} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-colors border border-red-100">
+                  <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                </button>
               </div>
             </div>
-            <div className="flex gap-2 pt-2.5 border-t border-slate-100 mt-1">
-              <button onClick={() => { setCurrentSub(sub); setIsModalOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[11px] font-bold hover:bg-indigo-100 transition-colors border border-indigo-100">
-                <Edit className="h-3.5 w-3.5" /> Modifier
-              </button>
-              <button onClick={() => handleDelete(sub.id)} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-colors border border-red-100">
-                <Trash2 className="h-3.5 w-3.5" /> Supprimer
-              </button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Desktop View (Table) */}
@@ -158,49 +180,59 @@ export const Subscriptions: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100/80">
-              {subscriptions.map((sub) => (
-                <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center mr-2.5 shadow-sm">
-                        <CreditCard className="h-4 w-4 text-indigo-500" />
-                      </div>
-                      <div>
-                        <div className="text-[12px] font-bold text-slate-900">{sub.name}</div>
-                        <div className="text-[10px] font-medium text-slate-500 mt-0.5 line-clamp-1 max-w-xs">{sub.description}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-[12px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                      {sub.price.toFixed(2)} €
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
-                    {sub.duration_months} mois
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {sub.activities.map(actId => {
-                        const act = activities.find(a => a.id === actId);
-                        return act ? (
-                          <span key={actId} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold border border-slate-200">
-                            {act.name}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-[11px] font-medium">
-                    <button onClick={() => { setCurrentSub(sub); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors mr-1">
-                      <Edit className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => handleDelete(sub.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+              {subscriptions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center">
+                    <CreditCard className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-[13px] font-bold text-slate-900 leading-tight">Aucun abonnement trouvé</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre premier abonnement.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                subscriptions.map((sub) => (
+                  <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center mr-2.5 shadow-sm">
+                          <CreditCard className="h-4 w-4 text-indigo-500" />
+                        </div>
+                        <div>
+                          <div className="text-[12px] font-bold text-slate-900">{sub.name}</div>
+                          <div className="text-[10px] font-medium text-slate-500 mt-0.5 line-clamp-1 max-w-xs">{sub.description}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-[12px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                        {sub.price.toFixed(2)} FCFA
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
+                      {sub.duration_months} mois
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {sub.activities.map(actId => {
+                          const act = activities.find(a => a.id === actId);
+                          return act ? (
+                            <span key={actId} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold border border-slate-200">
+                              {act.name}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-[11px] font-medium">
+                      <button onClick={() => { setCurrentSub(sub); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors mr-1">
+                        <Edit className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(sub.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -221,7 +253,7 @@ export const Subscriptions: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Prix (€)</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Prix (FCFA)</label>
                   <input type="number" step="0.01" required min="0" value={currentSub.price || ''} onChange={e => setCurrentSub({...currentSub, price: parseFloat(e.target.value)})} className="block w-full px-2.5 py-2 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[11px] font-medium text-slate-900 transition-all outline-none" />
                 </div>
                 <div>

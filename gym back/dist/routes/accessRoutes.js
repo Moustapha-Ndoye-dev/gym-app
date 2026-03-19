@@ -8,8 +8,8 @@ const zod_1 = require("zod");
 const router = (0, express_1.Router)();
 const verifySchema = zod_1.z.object({
     body: zod_1.z.object({
-        qr_code: zod_1.z.string().min(1, "Le code QR est requis")
-    })
+        qr_code: zod_1.z.string().min(1, 'Le code QR est requis'),
+    }),
 });
 router.use(auth_1.auth);
 router.get('/logs', accessController_1.getLogs);

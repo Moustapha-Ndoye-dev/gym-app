@@ -26,7 +26,7 @@ export class SubscriptionModel {
         price: data.price,
         durationMonths: data.durationMonths,
         features: data.features || null,
-      }
+      },
     });
     return subscription.id;
   }
@@ -40,7 +40,7 @@ export class SubscriptionModel {
           price: data.price,
           durationMonths: data.durationMonths,
           features: data.features || null,
-        }
+        },
       });
       return 1;
     } catch {

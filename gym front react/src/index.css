@@ -26,3 +26,20 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* Print Styles for Thermal Printers (80mm) */
+@media print {
+  body * { visibility: hidden; }
+  .fixed.inset-0, .animate-in.zoom-in {
+    visibility: visible !important;
+    position: absolute;
+    left: 0; top: 0;
+    width: 80mm !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .animate-in.zoom-in * { visibility: visible !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @page { size: 80mm auto; margin: 0; }
+  button { display: none !important; }
+}

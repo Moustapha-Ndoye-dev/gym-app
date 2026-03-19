@@ -13,7 +13,7 @@ export class TicketModel {
     return prisma.ticket.findMany({
       where: { gymId },
       orderBy: { createdAt: 'desc' },
-      include: { gym: true }
+      include: { gym: true },
     });
   }
 
@@ -27,17 +27,17 @@ export class TicketModel {
         gymId: data.gymId || 1,
         type: data.type,
         price: data.price,
-        status: data.status || 'valid'
-      }
+        status: data.status || 'valid',
+      },
     });
     return ticket.id;
   }
-  
+
   static async updateStatus(id: number, gymId: number, status: string) {
     try {
       await prisma.ticket.update({
         where: { id, gymId },
-        data: { status }
+        data: { status },
       });
       return 1;
     } catch {

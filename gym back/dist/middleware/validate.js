@@ -22,11 +22,19 @@ const validate = (schema) => async (req, res, next) => {
             console.log('[AUTH-DEV] Validation Failed:', JSON.stringify(err.issues, null, 2));
             return res.status(400).json({
                 message: 'Validation échouée',
-                errors: err.issues.map((e) => ({ path: e.path.join('.'), message: e.message }))
+                errors: err.issues.map((e) => ({
+                    path: e.path.join('.'),
+                    message: e.message,
+                })),
             });
         }
         console.error('Validation middleware error:', err);
-        return res.status(500).json({ message: 'Erreur interne de validation', error: err instanceof Error ? err.message : err });
+        return res
+            .status(500)
+            .json({
+            message: 'Erreur interne de validation',
+            error: err instanceof Error ? err.message : err,
+        });
     }
 };
 exports.validate = validate;

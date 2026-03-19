@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { getAllSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '../controllers/subscriptionController';
+import {
+  getAllSubscriptions,
+  createSubscription,
+  updateSubscription,
+  deleteSubscription,
+} from '../controllers/subscriptionController';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -38,17 +43,20 @@ const router = Router();
 
 const subscriptionSchema = z.object({
   body: z.object({
-    name: z.string().min(2, "Le nom est requis"),
-    price: z.number().positive("Le prix doit être positif"),
-    durationMonths: z.number().int().positive("La durée doit être d'au moins 1 mois"),
-    features: z.string().optional().or(z.literal(''))
-  })
+    name: z.string().min(2, 'Le nom est requis'),
+    price: z.number().positive('Le prix doit être positif'),
+    durationMonths: z
+      .number()
+      .int()
+      .positive("La durée doit être d'au moins 1 mois"),
+    features: z.string().optional().or(z.literal('')),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);
@@ -84,7 +92,12 @@ router.post('/', validate(subscriptionSchema), createSubscription);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/:id', validate(idSchema), validate(subscriptionSchema), updateSubscription);
+router.put(
+  '/:id',
+  validate(idSchema),
+  validate(subscriptionSchema),
+  updateSubscription
+);
 
 /**
  * @swagger

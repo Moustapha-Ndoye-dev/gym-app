@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, CreditCard, DollarSign, TrendingUp } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
+import { useConfirm } from '../context/ConfirmContext';
+import { useNotification } from '../context/NotificationContext';
 
 type Transaction = {
   id: number;
@@ -18,6 +20,9 @@ export const CashRegister: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({ type: 'income' });
   const [dailyTotal, setDailyTotal] = useState(0);
+
+  const { confirm } = useConfirm();
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     fetchTransactions();
@@ -56,20 +61,29 @@ export const CashRegister: React.FC = () => {
       await axiosInstance.post('/api/transactions', dataToSave);
       setIsModalOpen(false);
       fetchTransactions();
+      showNotification('Transaction enregistrée avec succès', 'success');
     } catch (error) {
       console.error('Error saving transaction:', error);
+      showNotification('Erreur lors de l\'enregistrement', 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-      try {
-        await axiosInstance.delete(`/api/transactions/${id}`);
-        fetchTransactions();
-      } catch (error) {
-        console.error('Error deleting transaction:', error);
+    confirm({
+      title: 'Supprimer la transaction',
+      message: 'Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible.',
+      confirmText: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/api/transactions/${id}`);
+          fetchTransactions();
+          showNotification('Transaction supprimée avec succès', 'success');
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          showNotification('Erreur lors de la suppression', 'error');
+        }
       }
-    }
+    });
   };
 
   return (
@@ -94,7 +108,7 @@ export const CashRegister: React.FC = () => {
           <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-emerald-100 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">Solde du jour</p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{dailyTotal.toFixed(2)} €</h2>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{dailyTotal.toFixed(2)} FCFA</h2>
             </div>
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
               <TrendingUp className="h-5 w-5 text-white" />
@@ -105,34 +119,42 @@ export const CashRegister: React.FC = () => {
 
       {/* Mobile View (Cards) */}
       <div className="lg:hidden space-y-2.5">
-        {transactions.map((transaction) => (
-          <div key={transaction.id} className="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 border
-                  ${transaction.type === 'income' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
-                  {transaction.type === 'income' ? (
-                    <DollarSign className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 text-red-500" />
-                  )}
-                </div>
-                <div>
-                  <div className="text-[12px] font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1">{transaction.description}</div>
-                  <div className="text-[10px] font-medium text-slate-500">{new Date(transaction.date).toLocaleDateString('fr-FR')} à {new Date(transaction.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
-                </div>
-              </div>
-              <div className={`text-[13px] font-extrabold whitespace-nowrap ${transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
-                {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toFixed(2)} €
-              </div>
-            </div>
-            <div className="pt-2.5 border-t border-slate-100 mt-1">
-              <button onClick={() => handleDelete(transaction.id)} className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-colors border border-red-100">
-                <Trash2 className="h-3.5 w-3.5" /> Supprimer
-              </button>
-            </div>
+        {transactions.length === 0 ? (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center">
+            <DollarSign className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-[13px] font-bold text-slate-900 leading-tight">Aucune transaction trouvée</p>
+            <p className="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre première opération.</p>
           </div>
-        ))}
+        ) : (
+          transactions.map((transaction) => (
+            <div key={transaction.id} className="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 border
+                    ${transaction.type === 'income' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+                    {transaction.type === 'income' ? (
+                      <DollarSign className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[12px] font-bold text-slate-900 leading-tight mb-0.5 line-clamp-1">{transaction.description}</div>
+                    <div className="text-[10px] font-medium text-slate-500">{new Date(transaction.date).toLocaleDateString('fr-FR')} à {new Date(transaction.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
+                  </div>
+                </div>
+                <div className={`text-[13px] font-extrabold whitespace-nowrap ${transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toFixed(2)} FCFA
+                </div>
+              </div>
+              <div className="pt-2.5 border-t border-slate-100 mt-1">
+                <button onClick={() => handleDelete(transaction.id)} className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-colors border border-red-100">
+                  <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Desktop View (Table) */}
@@ -149,32 +171,42 @@ export const CashRegister: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100/80">
-              {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
-                    {new Date(transaction.date).toLocaleDateString('fr-FR')} à {new Date(transaction.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-[12px] font-bold text-slate-900">{transaction.description}</div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-[9px] font-bold rounded-md border
-                      ${transaction.type === 'income' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                      {transaction.type === 'income' ? 'Encaissement' : 'Décaissement'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`text-[12px] font-extrabold ${transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toFixed(2)} €
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-[11px] font-medium">
-                    <button onClick={() => handleDelete(transaction.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center">
+                    <DollarSign className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-[13px] font-bold text-slate-900 leading-tight">Aucune transaction trouvée</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre première opération.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                transactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-4 py-3 whitespace-nowrap text-[11px] font-bold text-slate-700">
+                      {new Date(transaction.date).toLocaleDateString('fr-FR')} à {new Date(transaction.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-[12px] font-bold text-slate-900">{transaction.description}</div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-[9px] font-bold rounded-md border
+                        ${transaction.type === 'income' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                        {transaction.type === 'income' ? 'Encaissement' : 'Décaissement'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-[12px] font-extrabold ${transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toFixed(2)} FCFA
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-[11px] font-medium">
+                      <button onClick={() => handleDelete(transaction.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -213,7 +245,7 @@ export const CashRegister: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Montant (€)</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Montant (FCFA)</label>
                 <input type="number" step="0.01" required min="0.01" value={newTransaction.amount || ''} onChange={e => setNewTransaction({...newTransaction, amount: parseFloat(e.target.value)})} className="block w-full px-2.5 py-2 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-[11px] font-medium text-slate-900 transition-all outline-none" placeholder="0.00" />
               </div>
               <div>

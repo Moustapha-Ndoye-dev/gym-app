@@ -18,9 +18,11 @@
     <div class="lg:hidden space-y-2.5">
       <div
         v-if="activities.length === 0"
-        class="bg-white p-4 rounded-xl shadow-sm border border-dashed border-slate-200/70 text-center text-[11px] font-medium text-slate-500"
+        class="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center"
       >
-        Aucune activité pour le moment. Ajoutez-en une avec le bouton « Nouvelle Activité ».
+        <Dumbbell class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+        <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucune activité trouvée</p>
+        <p class="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre première activité.</p>
       </div>
       <div v-else v-for="activity in activities" :key="activity.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
         <div class="flex justify-between items-start">
@@ -57,8 +59,10 @@
 
     <!-- Desktop View (Table) -->
     <div class="hidden lg:block bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden">
-      <div v-if="activities.length === 0" class="p-6 text-center text-[12px] text-slate-500 font-medium">
-        Aucune activité enregistrée. Utilisez « Nouvelle Activité » pour en créer une.
+      <div v-if="activities.length === 0" class="px-4 py-12 text-center">
+        <Dumbbell class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+        <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucune activité trouvée</p>
+        <p class="text-[11px] text-slate-500 mt-1">Commencez par ajouter votre première activité.</p>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-100">

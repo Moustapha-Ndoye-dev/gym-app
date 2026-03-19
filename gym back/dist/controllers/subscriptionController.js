@@ -8,21 +8,26 @@ const getAllSubscriptions = async (req, res) => {
         res.json(subscriptions);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des abonnements' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des abonnements' });
     }
 };
 exports.getAllSubscriptions = getAllSubscriptions;
 const createSubscription = async (req, res) => {
     try {
-        const id = await subscriptionModel_1.SubscriptionModel.create({ ...req.body, gymId: req.user.gymId });
+        const id = await subscriptionModel_1.SubscriptionModel.create({
+            ...req.body,
+            gymId: req.user.gymId,
+        });
         res.status(201).json({ id, message: 'Abonnement créé avec succès' });
     }
     catch (error) {
         console.error('CreateSubscription error:', error);
         res.status(500).json({
-            message: 'Erreur lors de la création de l\'abonnement',
+            message: "Erreur lors de la création de l'abonnement",
             error: error?.message || String(error),
-            details: error
+            details: error,
         });
     }
 };

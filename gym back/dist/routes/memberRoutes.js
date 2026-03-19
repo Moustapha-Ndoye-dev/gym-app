@@ -38,16 +38,21 @@ const router = (0, express_1.Router)();
  */
 const memberSchema = zod_1.z.object({
     body: zod_1.z.object({
-        first_name: zod_1.z.string().min(2, "Le prénom est requis"),
-        last_name: zod_1.z.string().min(2, "Le nom est requis"),
+        first_name: zod_1.z.string().min(2, 'Le prénom est requis'),
+        last_name: zod_1.z.string().min(2, 'Le nom est requis'),
         phone: zod_1.z.string().optional(),
-        email: zod_1.z.string().email("Format d'email invalide").optional().or(zod_1.z.literal(''))
-    })
+        email: zod_1.z
+            .string()
+            .email("Format d'email invalide")
+            .optional()
+            .or(zod_1.z.literal('')),
+    }),
 });
+const updateMemberSchema = memberSchema.partial();
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 /**
@@ -116,7 +121,7 @@ router.post('/', (0, validate_1.validate)(memberSchema), memberController_1.crea
  *       404:
  *         description: Membre introuvable
  */
-router.put('/:id', (0, validate_1.validate)(idSchema), (0, validate_1.validate)(memberSchema), memberController_1.updateMember);
+router.put('/:id', (0, validate_1.validate)(idSchema), (0, validate_1.validate)(updateMemberSchema), memberController_1.updateMember);
 /**
  * @swagger
  * /api/members/{id}:

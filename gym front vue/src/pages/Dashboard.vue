@@ -54,7 +54,7 @@
           <div v-else-if="hasRevenueData" class="w-full h-full">
             <Line :data="chartData" :options="chartOptions" />
           </div>
-          <p v-else class="text-[11px] sm:text-[12px] text-slate-500 font-medium">
+          <p v-else class="text-[11px] sm:text-[12px] text-slate-500 font-medium text-center">
             Aucune donnée de revenus disponible pour le moment.
           </p>
         </div>
@@ -62,13 +62,13 @@
       
       <div class="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-200/60 flex flex-col">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-[13px] sm:text-[14px] font-extrabold text-slate-900 tracking-tight">Derniers Inscrits</h2>
-          <button class="text-[10px] sm:text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors">Voir tout</button>
+          <h2 class="text-[13px] sm:text-[14px] font-extrabold text-slate-900 tracking-tight">Derniers Adhérents</h2>
+          <button @click="$router.push('/members')" class="text-[10px] sm:text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors">Voir tout</button>
         </div>
         <div class="space-y-2 flex-1">
           <div
             v-if="loading"
-            class="text-[11px] sm:text-[12px] text-slate-500 font-medium text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/60"
+            class="text-[11px] sm:text-[12px] text-slate-500 font-medium text-center py-4 rounded-lg"
           >
             Chargement...
           </div>
@@ -76,33 +76,36 @@
             v-else-if="recentMembers.length === 0"
             class="text-[11px] sm:text-[12px] text-slate-500 font-medium text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/60"
           >
-            Aucun membre récent pour le moment.
+            Aucun adhérent récent pour le moment.
           </div>
           <div
             v-else
             v-for="member in recentMembers"
             :key="member.id"
+            @click="$router.push('/members')"
             class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-lg transition-all cursor-pointer group"
           >
             <div class="flex items-center">
-              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 text-[10px] sm:text-[11px] font-bold mr-2.5 shadow-sm group-hover:shadow-md transition-shadow">
-                {{ member.initials }}
+              <div v-if="member.photo" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden mr-2.5 shadow-sm border border-slate-100">
+                 <img :src="member.photo" class="w-full h-full object-cover" />
+              </div>
+              <div v-else class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] sm:text-[11px] font-bold mr-2.5 shadow-sm group-hover:shadow-md transition-shadow uppercase">
+                {{ (member.firstName || member.first_name || '?').charAt(0) }}{{ (member.lastName || member.last_name || '?').charAt(0) }}
               </div>
               <div>
-                <p class="text-[11px] sm:text-[12px] font-bold text-slate-900">{{ member.name }}</p>
-                <p class="text-[9px] sm:text-[10px] font-medium text-slate-500 mt-0.5">{{ member.time }}</p>
+                <p class="text-[11px] sm:text-[12px] font-bold text-slate-900">{{ member.firstName || member.first_name }} {{ member.lastName || member.last_name }}</p>
+                <p class="text-[9px] sm:text-[10px] font-medium text-slate-500 mt-0.5">
+                  {{ member.subscriptionName || 'Membre' }} • {{ formatDate(member.registrationDate || member.registration_date) }}
+                </p>
               </div>
             </div>
-            <div
-              v-if="member.badge"
-              class="text-[8px] sm:text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded"
-            >
-              {{ member.badge }}
+            <div class="text-[8px] sm:text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+              Actif
             </div>
           </div>
         </div>
-        <button class="w-full mt-3 py-2 border border-slate-200/60 rounded-lg text-[11px] sm:text-[12px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-          Ajouter un membre
+        <button @click="$router.push('/members')" class="w-full mt-3 py-2 bg-slate-900 text-white rounded-lg text-[11px] sm:text-[12px] font-bold hover:bg-indigo-600 transition-colors shadow-sm shadow-slate-200">
+          Nouveau membre
         </button>
       </div>
     </div>
@@ -137,42 +140,35 @@ const trends = ref({
   revenue: '—',
 });
 
-const recentMembers = ref<{ id: number; name: string; time: string; initials: string; badge?: string }[]>([]);
+const recentMembers = ref<any[]>([]);
 const hasRevenueData = ref(false);
 
 const statCards = computed(() => [
   { title: 'Adhérents', value: stats.value.members, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', trend: trends.value.members },
   { title: 'Abonnements', value: stats.value.activeSubscriptions, icon: ActivityIcon, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', trend: trends.value.subscriptions },
   { title: 'Tickets', value: stats.value.ticketsSold, icon: Ticket, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', trend: trends.value.tickets },
-  { title: 'Revenus', value: `${stats.value.dailyRevenue} €`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', trend: trends.value.revenue },
+  { title: 'Revenus', value: `${stats.value.dailyRevenue} FCFA`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', trend: trends.value.revenue },
 ]);
 
-function toValidDate(value: unknown): Date | null {
-  if (!value) return null;
-  const d = new Date(value as any);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function formatTrend(current: number, previous: number): string {
-  if (current === 0 && previous === 0) return '—';
-  if (previous <= 0 && current > 0) return '+100%';
-  if (previous <= 0) return '—';
-  const pct = ((current - previous) / previous) * 100;
-  const rounded = Math.round(pct);
-  const sign = rounded > 0 ? '+' : '';
-  return `${sign}${rounded}%`;
-}
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '-';
+  const d = new Date(dateString);
+  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR');
+};
 
 const chartData = ref({
   labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
   datasets: [
     {
-      label: 'Revenus (€)',
+      label: 'Revenus (FCFA)',
       backgroundColor: (context: any) => {
-        const bg = context.chart.ctx.createLinearGradient(0, 0, 0, 400);
-        bg.addColorStop(0, 'rgba(79, 70, 229, 0.3)');
-        bg.addColorStop(1, 'rgba(79, 70, 229, 0)');
-        return bg;
+        const chart = context.chart;
+        const {ctx, chartArea} = chart;
+        if (!chartArea) return null;
+        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, 'rgba(79, 70, 229, 0)');
+        gradient.addColorStop(1, 'rgba(79, 70, 229, 0.3)');
+        return gradient;
       },
       borderColor: '#4F46E5',
       pointBackgroundColor: '#4F46E5',
@@ -187,9 +183,7 @@ const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      display: false,
-    },
+    legend: { display: false },
     tooltip: {
       mode: 'index' as const,
       intersect: false,
@@ -199,38 +193,21 @@ const chartOptions = {
       borderColor: '#E2E8F0',
       borderWidth: 1,
       padding: 8,
-      bodyFont: {
-        weight: 'bold' as const,
-      },
+      bodyFont: { weight: 'bold' as const },
     },
   },
   scales: {
     y: {
-      grid: {
-        display: true,
-        drawBorder: false,
-        color: '#F1F5F9',
-      },
+      grid: { display: true, drawBorder: false, color: '#F1F5F9' },
       ticks: {
-        callback: (value: any) => value + '€',
-        font: {
-          size: 10,
-          weight: 600,
-        },
+        callback: (value: any) => value + 'FCFA',
+        font: { size: 10, weight: 600 },
         color: '#64748B',
       },
     },
     x: {
-      grid: {
-        display: false,
-      },
-      ticks: {
-        font: {
-          size: 10,
-          weight: 600,
-        },
-        color: '#64748B',
-      },
+      grid: { display: false },
+      ticks: { font: { size: 10, weight: 600 }, color: '#64748B' },
     },
   },
 };
@@ -238,186 +215,58 @@ const chartOptions = {
 onMounted(async () => {
   loading.value = true;
   errorMessage.value = null;
-  let hadJsonParseIssue = false;
-
-  async function fetchJsonArray(url: string): Promise<any[]> {
-    const headers = { Authorization: `Bearer ${authStore.token}` };
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} sur ${url}`);
-    }
-    const text = await res.text();
-    if (!text || !text.trim()) {
-      hadJsonParseIssue = true;
-      return [];
-    }
-    try {
-      return JSON.parse(text);
-    } catch {
-      // Cas typique: réponse vide -> "Unexpected end of JSON input"
-      hadJsonParseIssue = true;
-      return [];
-    }
-  }
 
   try {
-    const [membersData, ticketsData, transactionsData] = await Promise.all([
-      fetchJsonArray('/api/members'),
-      fetchJsonArray('/api/tickets'),
-      fetchJsonArray('/api/transactions'),
-    ]);
+    const headers = { Authorization: `Bearer ${authStore.token}` };
+    const statsRes = await fetch('/api/stats', { headers });
+    const statsData = await statsRes.json();
 
-    if (hadJsonParseIssue) {
-      errorMessage.value = 'Certaines données du tableau de bord n\'ont pas pu être lues correctement.';
+    if (statsRes.ok) {
+      stats.value = {
+        members: statsData.members.value,
+        activeSubscriptions: statsData.subscriptions.value,
+        ticketsSold: statsData.tickets.value,
+        dailyRevenue: statsData.revenue.value,
+      };
+      trends.value = {
+        members: statsData.members.trend,
+        subscriptions: statsData.subscriptions.trend,
+        tickets: statsData.tickets.trend,
+        revenue: statsData.revenue.trend,
+      };
+      recentMembers.value = statsData.recentMembers || [];
     }
 
-    const now = new Date();
+    // Chart Data (Simple fetch from transactions)
+    const txRes = await fetch('/api/transactions', { headers });
+    const transactions = await txRes.json();
 
-    const startToday = new Date(now);
-    startToday.setHours(0, 0, 0, 0);
-    const endToday = new Date(startToday);
-    endToday.setDate(endToday.getDate() + 1);
+    if (txRes.ok && Array.isArray(transactions)) {
+      const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+      const labels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+      const revenueByDay: Record<string, number> = labels.reduce((acc, l) => ({ ...acc, [l]: 0 }), {});
 
-    const startLast7 = new Date(now);
-    startLast7.setHours(0, 0, 0, 0);
-    startLast7.setDate(startLast7.getDate() - 6);
-    const endLast7 = new Date(now);
-    endLast7.setHours(23, 59, 59, 999);
+      const now = new Date();
+      const startOf7Days = new Date();
+      startOf7Days.setDate(now.getDate() - 6);
 
-    const startPrev7 = new Date(startLast7);
-    startPrev7.setDate(startPrev7.getDate() - 7);
-    const endPrev7 = new Date(startLast7);
+      transactions
+        .filter(t => t.type === 'income' && new Date(t.date) >= startOf7Days)
+        .forEach(t => {
+          const label = labels[ (new Date(t.date).getDay() + 6) % 7 ]; // Align with Mon-Sun
+          if (label in revenueByDay) revenueByDay[label] += t.amount;
+        });
 
-    const prevNow = new Date(now);
-    prevNow.setDate(prevNow.getDate() - 7);
-
-    const memberRegDate = (m: any) => toValidDate(m.registrationDate || m.registration_date);
-    const memberExpiryDate = (m: any) => toValidDate(m.expiryDate || m.expiry_date);
-
-    const membersLast7 = membersData.filter((m: any) => {
-      const d = memberRegDate(m);
-      return d && d >= startLast7 && d <= endLast7;
-    }).length;
-
-    const membersPrev7 = membersData.filter((m: any) => {
-      const d = memberRegDate(m);
-      return d && d >= startPrev7 && d < endPrev7;
-    }).length;
-
-    const isActiveAt = (m: any, at: Date) => {
-      const reg = memberRegDate(m);
-      const expiry = memberExpiryDate(m);
-      if (!expiry) return false;
-      if (expiry < at) return false;
-      return reg ? reg <= at : true;
-    };
-
-    const activeSubscriptionsNow = membersData.filter((m: any) => isActiveAt(m, now)).length;
-    const activeSubscriptionsPrev = membersData.filter((m: any) => isActiveAt(m, prevNow)).length;
-
-    const ticketsCreatedAt = (t: any) => toValidDate(t.createdAt || t.created_at);
-    const ticketsLast7 = ticketsData.filter((t: any) => {
-      const d = ticketsCreatedAt(t);
-      return d && d >= startLast7 && d <= endLast7;
-    }).length;
-
-    const ticketsPrev7 = ticketsData.filter((t: any) => {
-      const d = ticketsCreatedAt(t);
-      return d && d >= startPrev7 && d < endPrev7;
-    }).length;
-
-    const txDate = (t: any) => toValidDate(t.date);
-    const incomeTransactions = transactionsData.filter((t: any) => t.type === 'income' && txDate(t));
-
-    const dailyRevenue = incomeTransactions
-      .filter((t: any) => {
-        const d = txDate(t);
-        return d && d >= startToday && d < endToday;
-      })
-      .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-
-    const revenueLast7 = incomeTransactions
-      .filter((t: any) => {
-        const d = txDate(t);
-        return d && d >= startLast7 && d <= endLast7;
-      })
-      .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-
-    const revenuePrev7 = incomeTransactions
-      .filter((t: any) => {
-        const d = txDate(t);
-        return d && d >= startPrev7 && d < endPrev7;
-      })
-      .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-
-    stats.value = {
-      members: membersData.length,
-      activeSubscriptions: activeSubscriptionsNow,
-      ticketsSold: ticketsData.length,
-      dailyRevenue,
-    };
-
-    trends.value = {
-      members: formatTrend(membersLast7, membersPrev7),
-      subscriptions: formatTrend(activeSubscriptionsNow, activeSubscriptionsPrev),
-      tickets: formatTrend(ticketsLast7, ticketsPrev7),
-      revenue: formatTrend(revenueLast7, revenuePrev7),
-    };
-
-    // Recent members
-    const sortedMembers = [...membersData].sort((a: any, b: any) => {
-      const da = memberRegDate(a)?.getTime() ?? 0;
-      const db = memberRegDate(b)?.getTime() ?? 0;
-      return db - da;
-    });
-
-    recentMembers.value = sortedMembers.slice(0, 4).map((m: any) => {
-      const first = m.firstName || m.first_name || '';
-      const last = m.lastName || m.last_name || '';
-      const fullName = `${first} ${last}`.trim();
-      const reg = memberRegDate(m);
-      const badge = reg && reg >= startLast7 ? 'Nouveau' : undefined;
-      return {
-        id: m.id,
-        name: fullName || '—',
-        time: reg ? reg.toLocaleDateString() : '—',
-        initials: `${(first || '?').charAt(0)}${(last || '?').charAt(0)}`,
-        badge,
+      const values = labels.map(l => revenueByDay[l]);
+      chartData.value = {
+        ...chartData.value,
+        datasets: [{ ...chartData.value.datasets[0], data: values }]
       };
-    });
-
-    // Build weekly revenue chart from real income transactions (last 7 days)
-    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    const revenueByDay: Record<string, number> = {
-      Lun: 0, Mar: 0, Mer: 0, Jeu: 0, Ven: 0, Sam: 0, Dim: 0,
-    };
-
-    incomeTransactions
-      .filter((t: any) => {
-        const d = txDate(t);
-        return d && d >= startLast7 && d <= endLast7;
-      })
-      .forEach((t: any) => {
-        const d = txDate(t)!;
-        const label = days[d.getDay()];
-        if (label in revenueByDay) {
-          revenueByDay[label] += t.amount || 0;
-        }
-      });
-
-    const values = chartData.value.labels.map((label: any) => revenueByDay[label] || 0);
-    chartData.value = {
-      ...chartData.value,
-      datasets: chartData.value.datasets.map((ds: any) => ({
-        ...ds,
-        data: values,
-      })),
-    };
-
-    hasRevenueData.value = values.some((v) => v > 0);
+      hasRevenueData.value = values.some(v => v > 0);
+    }
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    errorMessage.value = 'Impossible de charger les données du tableau de bord.';
+    console.error('Error fetching dashboard stats:', error);
+    errorMessage.value = 'Erreur lors du chargement des statistiques.';
   } finally {
     loading.value = false;
   }

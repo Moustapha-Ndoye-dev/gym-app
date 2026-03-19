@@ -28,7 +28,7 @@ export class ActivityModel {
         instructor: data.instructor || null,
         schedule: data.schedule || null,
         capacity: data.capacity || 20,
-      }
+      },
     });
     return activity.id;
   }
@@ -43,7 +43,7 @@ export class ActivityModel {
           instructor: data.instructor || null,
           schedule: data.schedule || null,
           capacity: data.capacity || 20,
-        }
+        },
       });
       return 1;
     } catch {

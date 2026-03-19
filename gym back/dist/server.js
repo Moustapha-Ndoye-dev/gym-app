@@ -22,8 +22,8 @@ const transactionRoutes_1 = __importDefault(require("./routes/transactionRoutes"
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const productRoutes_1 = __importDefault(require("./routes/productRoutes"));
 const statsRoutes_1 = __importDefault(require("./routes/statsRoutes"));
-// Charge le bon fichier .env même si le backend est lancé depuis un autre dossier.
-dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../.env') });
+// Charge le fichier .env
+dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 // Swagger definition
@@ -58,9 +58,13 @@ app.use('/api/docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.de
 // Security Middlewares
 app.use((0, helmet_1.default)()); // Sets generic security headers
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'], // Allow Vue & React dev servers
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:5173',
+    ], // Allow Vue & React dev servers
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express_1.default.json());
 app.use(rateLimiter_1.apiLimiter); // Apply general rate limiting
@@ -77,7 +81,9 @@ app.use('/api/products', productRoutes_1.default);
 app.use('/api/stats', statsRoutes_1.default);
 // Base route
 app.get('/', (req, res) => {
-    res.json({ message: 'Gym Central API is running (TypeScript + Express + Prisma)' });
+    res.json({
+        message: 'Gym Central API is running (TypeScript + Express + Prisma)',
+    });
 });
 app.listen(PORT, async () => {
     await (0, db_1.initializeDb)();

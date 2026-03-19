@@ -16,7 +16,15 @@
 
     <!-- Mobile View (Cards) -->
     <div class="lg:hidden space-y-2.5">
-      <div v-for="user in users" :key="user.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
+      <div
+        v-if="users.length === 0"
+        class="bg-white p-8 rounded-xl shadow-sm border border-slate-200/60 text-center"
+      >
+        <UserIcon class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+        <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucun utilisateur trouvé</p>
+        <p class="text-[11px] text-slate-500 mt-1">Cliquez sur « Nouvel Utilisateur » pour commencer.</p>
+      </div>
+      <div v-else v-for="user in users" :key="user.id" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/60 flex flex-col gap-2.5">
         <div class="flex justify-between items-start">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm shrink-0">
@@ -64,7 +72,14 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100/80">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50/50 transition-colors group">
+            <tr v-if="users.length === 0">
+              <td colspan="4" class="px-4 py-12 text-center">
+                <UserIcon class="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                <p class="text-[13px] font-bold text-slate-900 leading-tight">Aucun utilisateur trouvé</p>
+                <p class="text-[11px] text-slate-500 mt-1">Utilisez le bouton en haut pour ajouter un utilisateur.</p>
+              </td>
+            </tr>
+            <tr v-else v-for="user in users" :key="user.id" class="hover:bg-slate-50/50 transition-colors group">
               <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center mr-2.5 shadow-sm">
@@ -190,6 +205,7 @@ const handleSave = async () => {
   const dataToSave = {
     ...currentUser.value,
     password: password.value || undefined,
+    gymId: currentUser.value.gymId || authStore.user?.gymId,
     created_at: currentUser.value.created_at || new Date().toISOString()
   };
 

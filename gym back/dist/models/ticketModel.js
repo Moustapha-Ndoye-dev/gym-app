@@ -10,7 +10,7 @@ class TicketModel {
         return db_1.default.ticket.findMany({
             where: { gymId },
             orderBy: { createdAt: 'desc' },
-            include: { gym: true }
+            include: { gym: true },
         });
     }
     static async getById(id, gymId) {
@@ -22,8 +22,8 @@ class TicketModel {
                 gymId: data.gymId || 1,
                 type: data.type,
                 price: data.price,
-                status: data.status || 'valid'
-            }
+                status: data.status || 'valid',
+            },
         });
         return ticket.id;
     }
@@ -31,7 +31,7 @@ class TicketModel {
         try {
             await db_1.default.ticket.update({
                 where: { id, gymId },
-                data: { status }
+                data: { status },
             });
             return 1;
         }

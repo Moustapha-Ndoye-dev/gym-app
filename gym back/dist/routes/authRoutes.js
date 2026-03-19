@@ -50,33 +50,47 @@ const router = (0, express_1.Router)();
  */
 const loginSchema = zod_1.z.object({
     body: zod_1.z.object({
-        username: zod_1.z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-        password: zod_1.z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères")
-    })
+        username: zod_1.z
+            .string()
+            .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+        password: zod_1.z
+            .string()
+            .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+    }),
 });
 const memberSchema = zod_1.z.object({
-    body: zod_1.z.object({
-        username: zod_1.z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-        email: zod_1.z.string().email("Email invalide"),
-        password: zod_1.z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères"),
-        confirmPassword: zod_1.z.string().min(5, "La confirmation du mot de passe doit contenir au moins 5 caractères"),
+    body: zod_1.z
+        .object({
+        username: zod_1.z
+            .string()
+            .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+        email: zod_1.z.string().email('Email invalide'),
+        password: zod_1.z
+            .string()
+            .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+        confirmPassword: zod_1.z
+            .string()
+            .min(5, 'La confirmation du mot de passe doit contenir au moins 5 caractères'),
         gymId: zod_1.z.number().optional(),
         // Optional fields for now to match Member model
         first_name: zod_1.z.string().optional(),
         last_name: zod_1.z.string().optional(),
-        phone: zod_1.z.string().optional()
-    }).refine((data) => data.password === data.confirmPassword, {
-        message: "Les mots de passe ne correspondent pas",
-        path: ["confirmPassword"]
+        phone: zod_1.z.string().optional(),
     })
+        .refine((data) => data.password === data.confirmPassword, {
+        message: 'Les mots de passe ne correspondent pas',
+        path: ['confirmPassword'],
+    }),
 });
 const registerGymSchema = zod_1.z.object({
     body: zod_1.z.object({
-        gymName: zod_1.z.string().min(2, "Le nom de la salle est requis"),
-        gymEmail: zod_1.z.string().email("Email de la salle invalide"),
+        gymName: zod_1.z.string().min(2, 'Le nom de la salle est requis'),
+        gymEmail: zod_1.z.string().email('Email de la salle invalide'),
         adminUsername: zod_1.z.string().min(3, "Le nom d'utilisateur admin est requis"),
-        adminPassword: zod_1.z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères")
-    })
+        adminPassword: zod_1.z
+            .string()
+            .min(5, 'Le mot de passe doit contenir au moins 5 caractères'),
+    }),
 });
 /**
  * @swagger
@@ -117,15 +131,20 @@ router.post('/login', (0, validate_1.validate)(loginSchema), authController_1.lo
  *         description: Données invalides ou email déjà utilisé
  */
 router.post('/register-member', (0, validate_1.validate)(memberSchema), async (req, res) => {
+    console.log('[AUTH-TRACE] Received request on /register-member');
+    console.log('[AUTH-TRACE] Request body:', JSON.stringify(req.body, null, 2));
     const { username, password, email, gymId, ...extraData } = req.body;
     console.log(`[AUTH-DEV] >>> Member registration attempt: "${username}" / "${email}"`);
+    console.log('[AUTH-TRACE] extraData:', JSON.stringify(extraData, null, 2));
     try {
         // 1. Resolve Gym ID - Robust Fallback
         console.log(`[AUTH-DEV] Resolving Gym ID (Client requested: ${gymId || 'none'})...`);
         let finalGymId = gymId;
         let gymFound = false;
         if (finalGymId) {
-            const checkGym = await db_1.default.gym.findUnique({ where: { id: finalGymId } });
+            const checkGym = await db_1.default.gym.findUnique({
+                where: { id: finalGymId },
+            });
             if (checkGym) {
                 gymFound = true;
                 console.log(`[AUTH-DEV] Requested Gym ID ${finalGymId} validated: "${checkGym.name}"`);
@@ -138,45 +157,51 @@ router.post('/register-member', (0, validate_1.validate)(memberSchema), async (r
             const firstGym = await db_1.default.gym.findFirst();
             if (!firstGym) {
                 console.error(`[AUTH-DEV] ! CRITICAL FAILURE ! No Gym records exist in Database.`);
-                await db_1.default.$disconnect();
                 return res.status(400).json({
-                    message: "Configuration manquante : Aucune salle de sport trouvée. Contactez le support."
+                    message: 'Configuration manquante : Aucune salle de sport trouvée. Contactez le support.',
                 });
             }
             finalGymId = firstGym.id;
             console.log(`[AUTH-DEV] Fallback successful. Using Gym ID ${finalGymId} ("${firstGym.name}")`);
         }
-        // 2. Create User account - Assigning 'admin' by default as requested to see all menu items
-        console.log(`[AUTH-DEV] Step 1/2: Creating User identifier="${username}" with role "admin"...`);
-        const user = await userModel_1.UserModel.createUser(username, password, 'admin', finalGymId, email);
+        console.log('[AUTH-TRACE] finalGymId:', finalGymId);
+        // 2. Create User account - Assigning 'member' role for public registration
+        const user = await userModel_1.UserModel.createUser(username, password, 'member', finalGymId, email);
+        console.log('[AUTH-TRACE] UserModel.createUser returned:', JSON.stringify(user, null, 2));
         console.log(`[AUTH-DEV] Step 1/2 Success: User created with ID: ${user.id}`);
         // 3. Create Member profile
-        console.log(`[AUTH-DEV] Step 2/2: Creating Member profile (linking to user ID ${user.id})...`);
-        const memberId = await memberModel_1.MemberModel.create({
+        const memberArgs = {
             email,
-            first_name: extraData.first_name || username,
-            last_name: extraData.last_name || 'Membre',
-            gymId: finalGymId
-        });
+            firstName: extraData.first_name || username,
+            lastName: extraData.last_name || 'Membre',
+            phone: extraData.phone,
+            gymId: finalGymId,
+        };
+        console.log('[AUTH-TRACE] Calling MemberModel.create with:', JSON.stringify(memberArgs, null, 2));
+        const memberId = await memberModel_1.MemberModel.create(memberArgs);
+        console.log('[AUTH-TRACE] MemberModel.create returned:', memberId);
         console.log(`[AUTH-DEV] Step 2/2 Success: Member profile created with ID: ${memberId}`);
         console.log(`[AUTH-DEV] <<< Registration COMPLETED for "${username}"`);
         res.status(201).json({ id: memberId, message: 'Inscription réussie !' });
     }
     catch (error) {
         console.error('[AUTH-DEV] !!! REGISTRATION FAILED !!! Details:', error);
+        console.error('[AUTH-TRACE] Error object:', JSON.stringify(error, null, 2));
         if (error.code === 'P2002') {
             const target = error.meta?.target || '';
             console.log(`[AUTH-DEV] Conflict: Duplicate entry in ${target}`);
             if (typeof target === 'string' && target.includes('username')) {
-                return res.status(400).json({ message: 'Ce nom d\'utilisateur est déjà pris.' });
+                return res
+                    .status(400)
+                    .json({ message: "Ce nom d'utilisateur est déjà pris." });
             }
             if (typeof target === 'string' && target.includes('email')) {
                 return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
             }
         }
         res.status(500).json({
-            message: 'Erreur technique durant l\'inscription.',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: "Erreur technique durant l'inscription.",
+            error: error?.message || String(error),
         });
     }
 });

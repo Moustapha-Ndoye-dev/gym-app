@@ -37,15 +37,18 @@ const router = (0, express_1.Router)();
  */
 const transactionSchema = zod_1.z.object({
     body: zod_1.z.object({
-        amount: zod_1.z.number().positive("Le montant doit être positif").or(zod_1.z.number().negative("Le montant doit être négatif en cas de dépense")),
+        amount: zod_1.z
+            .number()
+            .positive('Le montant doit être positif')
+            .or(zod_1.z.number().negative('Le montant doit être négatif en cas de dépense')),
         type: zod_1.z.enum(['income', 'expense']),
-        description: zod_1.z.string().optional().or(zod_1.z.literal(''))
-    })
+        description: zod_1.z.string().optional().or(zod_1.z.literal('')),
+    }),
 });
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 /**

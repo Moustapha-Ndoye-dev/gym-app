@@ -36,17 +36,17 @@ const router = (0, express_1.Router)();
  */
 const activitySchema = zod_1.z.object({
     body: zod_1.z.object({
-        name: zod_1.z.string().min(2, "Le nom est requis"),
+        name: zod_1.z.string().min(2, 'Le nom est requis'),
         description: zod_1.z.string().optional().or(zod_1.z.literal('')),
         instructor: zod_1.z.string().optional().or(zod_1.z.literal('')),
         schedule: zod_1.z.string().optional().or(zod_1.z.literal('')),
-        capacity: zod_1.z.number().int().positive().optional()
-    })
+        capacity: zod_1.z.number().int().positive().optional(),
+    }),
 });
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 /**

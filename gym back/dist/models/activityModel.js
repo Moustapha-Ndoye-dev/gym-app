@@ -21,7 +21,7 @@ class ActivityModel {
                 instructor: data.instructor || null,
                 schedule: data.schedule || null,
                 capacity: data.capacity || 20,
-            }
+            },
         });
         return activity.id;
     }
@@ -35,7 +35,7 @@ class ActivityModel {
                     instructor: data.instructor || null,
                     schedule: data.schedule || null,
                     capacity: data.capacity || 20,
-                }
+                },
             });
             return 1;
         }

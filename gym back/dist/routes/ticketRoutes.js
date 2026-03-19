@@ -31,14 +31,14 @@ const router = (0, express_1.Router)();
  */
 const ticketSchema = zod_1.z.object({
     body: zod_1.z.object({
-        type: zod_1.z.string().min(2, "Le type est requis"),
-        price: zod_1.z.number().positive("Le prix doit être positif")
-    })
+        type: zod_1.z.string().min(2, 'Le type est requis'),
+        price: zod_1.z.number().positive('Le prix doit être positif'),
+    }),
 });
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 /**

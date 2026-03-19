@@ -10,7 +10,9 @@ const getLogs = async (req, res) => {
         res.json(logs);
     }
     catch (error) {
-        res.status(500).json({ message: 'Erreur lors de la récupération des logs' });
+        res
+            .status(500)
+            .json({ message: 'Erreur lors de la récupération des logs' });
     }
 };
 exports.getLogs = getLogs;
@@ -38,12 +40,14 @@ const verifyAccess = async (req, res) => {
                     }
                     else {
                         granted = false;
-                        message = expiryDate ? 'Abonnement expiré' : 'Aucun abonnement actif';
+                        message = expiryDate
+                            ? 'Abonnement expiré'
+                            : 'Aucun abonnement actif';
                     }
                     memberData = {
                         firstName: member.firstName,
                         lastName: member.lastName,
-                        photo: member.photo
+                        photo: member.photo,
                     };
                 }
                 else {

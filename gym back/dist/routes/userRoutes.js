@@ -32,15 +32,20 @@ const router = (0, express_1.Router)();
  */
 const userSchema = zod_1.z.object({
     body: zod_1.z.object({
-        username: zod_1.z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
-        password: zod_1.z.string().min(5, "Le mot de passe doit contenir au moins 5 caractères").optional(),
-        role: zod_1.z.enum(['admin', 'cashier', 'controller'])
-    })
+        username: zod_1.z
+            .string()
+            .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+        password: zod_1.z
+            .string()
+            .min(5, 'Le mot de passe doit contenir au moins 5 caractères')
+            .optional(),
+        role: zod_1.z.enum(['admin', 'cashier', 'controller']),
+    }),
 });
 const idSchema = zod_1.z.object({
     params: zod_1.z.object({
-        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-    })
+        id: zod_1.z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+    }),
 });
 router.use(auth_1.auth);
 router.use((0, auth_1.requireRole)(['admin'])); // Only admins can manage users

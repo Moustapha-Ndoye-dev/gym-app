@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct } from '../controllers/productController';
+import {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from '../controllers/productController';
 import { auth, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { z } from 'zod';
@@ -37,17 +43,17 @@ const router = Router();
 
 const productSchema = z.object({
   body: z.object({
-    name: z.string().min(2, "Le nom est requis"),
-    price: z.number().positive("Le prix doit être positif"),
+    name: z.string().min(2, 'Le nom est requis'),
+    price: z.number().positive('Le prix doit être positif'),
     stock: z.number().int().min(0).optional(),
-    category: z.string().optional()
-  })
+    category: z.string().optional(),
+  }),
 });
 
 const idSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre")
-  })
+    id: z.string().regex(/^\d+$/, "L'ID doit être un nombre"),
+  }),
 });
 
 router.use(auth);
@@ -79,7 +85,12 @@ router.get('/:id', validate(idSchema), getProductById);
  *     security:
  *       - bearerAuth: []
  */
-router.post('/', requireRole(['admin']), validate(productSchema), createProduct);
+router.post(
+  '/',
+  requireRole(['admin']),
+  validate(productSchema),
+  createProduct
+);
 
 /**
  * @swagger
@@ -90,7 +101,13 @@ router.post('/', requireRole(['admin']), validate(productSchema), createProduct)
  *     security:
  *       - bearerAuth: []
  */
-router.put('/:id', requireRole(['admin']), validate(idSchema), validate(productSchema), updateProduct);
+router.put(
+  '/:id',
+  requireRole(['admin']),
+  validate(idSchema),
+  validate(productSchema),
+  updateProduct
+);
 
 /**
  * @swagger
@@ -101,6 +118,11 @@ router.put('/:id', requireRole(['admin']), validate(idSchema), validate(productS
  *     security:
  *       - bearerAuth: []
  */
-router.delete('/:id', requireRole(['admin']), validate(idSchema), deleteProduct);
+router.delete(
+  '/:id',
+  requireRole(['admin']),
+  validate(idSchema),
+  deleteProduct
+);
 
 export default router;
